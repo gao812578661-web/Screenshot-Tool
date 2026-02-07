@@ -66,39 +66,34 @@ namespace RefScrn.Services
 
             try
             {
-                var logoPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets", "app_icon.ico");
+                // Load from Embedded Resource (Pack URI)
+                var uri = new Uri("pack://application:,,,/assets/app_icon.ico", UriKind.Absolute);
+                var streamInfo = System.Windows.Application.GetResourceStream(uri);
                 
-                if (System.IO.File.Exists(logoPath))
+                if (streamInfo != null)
                 {
-                    using (var originalBmp = new Bitmap(logoPath))
+                    using (streamInfo.Stream)
                     {
-                        using (var resizedBmp = new Bitmap(originalBmp, new Size(256, 256)))
+                        var icon = new System.Drawing.Icon(streamInfo.Stream);
+                        _notifyIcon = new NotifyIcon
                         {
-                            var hIcon = resizedBmp.GetHicon();
-                            _notifyIcon = new NotifyIcon
-                            {
-                                Icon = System.Drawing.Icon.FromHandle(hIcon),
-                                Visible = true,
-                                Text = "RefScrn",
-                                ContextMenuStrip = _contextMenu
-                            };
-                        }
+                            Icon = icon,
+                            Visible = true,
+                            Text = "RefScrn",
+                            ContextMenuStrip = _contextMenu
+                        };
                     }
                 }
                 else
                 {
-                    _notifyIcon = new NotifyIcon
-                    {
-                        Icon = SystemIcons.Application,
-                        Visible = true,
-                        Text = "RefScrn",
-                        ContextMenuStrip = _contextMenu
-                    };
+                    // Fallback should not happen if build is correct
+                    throw new Exception("Resource stream is null");
                 }
             }
             catch(Exception ex)
             {
                 Console.WriteLine($"Failed to load icon: {ex.Message}");
+                // Fallback to system icon
                 _notifyIcon = new NotifyIcon
                 {
                     Icon = SystemIcons.Application,
