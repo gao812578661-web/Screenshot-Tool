@@ -1,0 +1,113 @@
+<Window x:Class="RefScrn.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings" Width="460" SizeToContent="Height"
+        Icon="assets/app_icon.ico"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        Background="White">
+    <Window.Resources>
+        <Style TargetType="TextBlock" x:Key="HeaderStyle">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="#DDDDDD"/>
+            <Setter Property="Background" Value="White"/>
+        </Style>
+        <Style TargetType="Button" x:Key="NormalButton">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#DDDDDD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F5F5F5"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#E0E0E0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="White" Padding="25">
+        <StackPanel>
+            <!-- General -->
+            <TextBlock x:Name="GeneralHeader" Text="General" Style="{StaticResource HeaderStyle}"/>
+            <Border Background="#F9F9F9" CornerRadius="6" Padding="15" Margin="0,0,0,20">
+                <CheckBox x:Name="AutoStartCheckBox" Content="Run on Startup" VerticalContentAlignment="Center" FontSize="13"/>
+            </Border>
+
+            <!-- Hotkeys -->
+            <TextBlock x:Name="HotkeysHeader" Text="Hotkeys" Style="{StaticResource HeaderStyle}"/>
+            <Border Background="#F9F9F9" CornerRadius="6" Padding="15" Margin="0,0,0,20">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="4" Background="White">
+                        <TextBox x:Name="HotkeyTextBox" IsReadOnly="True" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center" Padding="5"/>
+                    </Border>
+                    <Button Grid.Column="1" Content="Set" Width="80" Margin="10,0,0,0" x:Name="SetHotkeyButton" Style="{StaticResource NormalButton}" Click="OnSetHotkeyClick"/>
+                </Grid>
+            </Border>
+
+            <!-- Save Path -->
+            <TextBlock x:Name="SavePathHeader" Text="Save Path" Style="{StaticResource HeaderStyle}"/>
+            <Border Background="#F9F9F9" CornerRadius="6" Padding="15" Margin="0,0,0,25">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="4" Background="White">
+                        <TextBox x:Name="SavePathTextBox" IsReadOnly="True" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center" Padding="5"/>
+                    </Border>
+                    <Button Grid.Column="1" Content="..." MinWidth="40" Margin="10,0,0,0" x:Name="BrowsePathButton" Style="{StaticResource NormalButton}" Click="OnBrowsePathClick"/>
+                </Grid>
+            </Border>
+
+            <!-- Actions -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="SaveButton" Content="Save" Width="90" Background="#07C160" Foreground="White" BorderThickness="0" Click="OnSaveClick" FontSize="13" Height="32">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#06AD56"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button x:Name="CancelButton" Content="Cancel" Width="90" Margin="12,0,0,0" Style="{StaticResource NormalButton}" Click="OnCancelClick" Height="32"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

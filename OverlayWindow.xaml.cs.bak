@@ -1,0 +1,472 @@
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.IO;
+
+namespace RefScrn
+{
+    public partial class OverlayWindow : Window
+    {
+        private System.Windows.Point _startPoint;
+        private bool _isSelecting;
+        private RectangleGeometry _fullScreenGeometry;
+        private RectangleGeometry _selectionGeometry;
+        private GeometryGroup _maskGeometry;
+
+        private SelectionAdorner _adorner;
+
+        public OverlayWindow(BitmapSource screenshot, double left, double top)
+        {
+            InitializeComponent();
+            
+            // Set window position to the captured screen
+            this.Left = left;
+            this.Top = top;
+            this.Width = screenshot.PixelWidth;
+            this.Height = screenshot.PixelHeight;
+
+            BackgroundImage.Source = screenshot;
+            
+            this.KeyDown += OnKeyDown;
+            this.MouseDown += OnMouseDown;
+            this.MouseMove += OnMouseMove;
+            this.MouseUp += OnMouseUp;
+            this.Loaded += OnLoaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            _fullScreenGeometry = new RectangleGeometry(new Rect(0, 0, this.ActualWidth, this.ActualHeight));
+            _selectionGeometry = new RectangleGeometry(new Rect(0, 0, 0, 0));
+            _maskGeometry = new GeometryGroup();
+            _maskGeometry.Children.Add(_fullScreenGeometry);
+            _maskGeometry.Children.Add(_selectionGeometry);
+            _maskGeometry.FillRule = FillRule.EvenOdd;
+
+            MaskPath.Data = _maskGeometry;
+            
+            _adorner = new SelectionAdorner(SelectionCanvas, SelectionRect);
+
+            this.Activate();
+            this.Focus();
+        }
+
+        private void OnKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                this.Close();
+            }
+        }
+
+        private int _resizeHandleIndex = -1;
+        private Rect _startRect;
+        private enum AnnotationTool
+        {
+            None,
+            Rectangle,
+            Ellipse,
+            Arrow,
+            Brush,
+            Text
+        }
+
+        private AnnotationTool _currentTool = AnnotationTool.None;
+        private System.Windows.Shapes.Shape? _tempShape;
+        private System.Windows.Point _drawStartPoint;
+        private bool _isDrawing = false;
+        private System.Windows.Media.Brush _drawColor = System.Windows.Media.Brushes.Red;
+        private double _drawThickness = 3.0;
+
+                private void HandleDrawingMouseDown(System.Windows.Point pos)
+        {
+            if (_currentTool == AnnotationTool.None) return;
+
+            _isDrawing = true;
+            _drawStartPoint = pos;
+
+            switch (_currentTool)
+            {
+                case AnnotationTool.Rectangle:
+                    _tempShape = new System.Windows.Shapes.Rectangle
+                    {
+                        Stroke = _drawColor,
+                        StrokeThickness = _drawThickness
+                    };
+                    break;
+                case AnnotationTool.Ellipse:
+                    _tempShape = new System.Windows.Shapes.Ellipse
+                    {
+                        Stroke = _drawColor,
+                        StrokeThickness = _drawThickness
+                    };
+                    break;
+            }
+
+            if (_tempShape != null)
+            {
+                Canvas.SetLeft(_tempShape, pos.X);
+                Canvas.SetTop(_tempShape, pos.Y);
+                AnnotationCanvas.Children.Add(_tempShape);
+            }
+        }
+
+        private void HandleDrawingMouseMove(System.Windows.Point pos)
+        {
+            if (!_isDrawing || _tempShape == null) return;
+
+            double x = Math.Min(pos.X, _drawStartPoint.X);
+            double y = Math.Min(pos.Y, _drawStartPoint.Y);
+            double w = Math.Abs(pos.X - _drawStartPoint.X);
+            double h = Math.Abs(pos.Y - _drawStartPoint.Y);
+
+            Canvas.SetLeft(_tempShape, x);
+            Canvas.SetTop(_tempShape, y);
+            _tempShape.Width = w;
+            _tempShape.Height = h;
+        }
+
+        private void HandleDrawingMouseUp()
+        {
+            _isDrawing = false;
+            _tempShape = null;
+        }
+        private void OnToolClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn && btn.Tag is string toolStr)
+            {
+                if (Enum.TryParse(toolStr, out AnnotationTool tool))
+                {
+                    _currentTool = tool;
+                    // TODO: Update button visual states
+                    this.Cursor = System.Windows.Input.Cursors.Pen;
+                }
+            }
+        }
+
+        private void OnMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                var pos = e.GetPosition(SelectionCanvas);
+                _resizeHandleIndex = _adorner.GetHandleUnderMouse(pos);
+
+                if (_resizeHandleIndex != -1)
+                {
+                    _isSelecting = true;
+                    _startRect = _selectionGeometry.Rect;
+                    _startPoint = pos; // Capture start point for delta calculation
+                }
+                else
+                {
+                    // Start new selection or move existing (if inside)
+                    if (_selectionGeometry.Rect.Contains(pos))
+                    {
+                        // Moving existing selection
+                         _isSelecting = true;
+                        _startPoint = pos;
+                        _startRect = _selectionGeometry.Rect;
+                        _resizeHandleIndex = -2; // Special index for moving
+                        
+                         // Hide handles while moving
+                        _adorner.Hide();
+                    }
+                    else
+                    {
+                        // Start new selection
+                        _isSelecting = true;
+                        _startPoint = pos;
+                        _resizeHandleIndex = -1;
+                        
+                        _selectionGeometry.Rect = new Rect(_startPoint, new System.Windows.Size(0, 0));
+                        SelectionRect.Visibility = Visibility.Visible;
+                        Canvas.SetLeft(SelectionRect, _startPoint.X);
+                        Canvas.SetTop(SelectionRect, _startPoint.Y);
+                        SelectionRect.Width = 0;
+                        SelectionRect.Height = 0;
+                        _adorner.Hide();
+                    }
+                }
+            }
+            else if (e.RightButton == MouseButtonState.Pressed)
+            {
+                this.Close();
+            }
+        }
+
+        private void OnMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+                        if (_currentTool != AnnotationTool.None)
+            {
+                var pos = e.GetPosition(this);
+                if (_selectionGeometry.Rect.Contains(pos))
+                {
+                    HandleDrawingMouseDown(pos);
+                    e.Handled = true;
+                    return;
+                }
+            }
+            var currentPoint = e.GetPosition(this);
+
+                        if (_currentTool != AnnotationTool.None && _isDrawing)
+            {
+                HandleDrawingMouseMove(currentPoint);
+                e.Handled = true;
+                return;
+            }
+                        if (_isDrawing)
+            {
+                HandleDrawingMouseUp();
+                e.Handled = true;
+                return;
+            }
+            if (_isSelecting)
+            {
+                if (_resizeHandleIndex != -1)
+                {
+                    if (_resizeHandleIndex == -2)
+                    {
+                        // Moving
+                        double offsetX = currentPoint.X - _startPoint.X;
+                        double offsetY = currentPoint.Y - _startPoint.Y;
+                        
+                        double newX = _startRect.X + offsetX;
+                        double newY = _startRect.Y + offsetY;
+                        
+                        // Boundary checks (optional but good)
+                        // Allow moving freely for now
+                        
+                        UpdateSelection(new Rect(newX, newY, _startRect.Width, _startRect.Height));
+                    }
+                    else
+                    {
+                        // Resizing
+                        HandleResize(_resizeHandleIndex, currentPoint);
+                    }
+                }
+                else
+                {
+                    // Creating new selection
+                    var x = Math.Min(currentPoint.X, _startPoint.X);
+                    var y = Math.Min(currentPoint.Y, _startPoint.Y);
+                    var w = Math.Abs(currentPoint.X - _startPoint.X);
+                    var h = Math.Abs(currentPoint.Y - _startPoint.Y);
+
+                    UpdateSelection(new Rect(x, y, w, h));
+                }
+            }
+            else
+            {
+                // Update Cursor
+                int handle = _adorner.GetHandleUnderMouse(currentPoint);
+                if (handle != -1)
+                {
+                    this.Cursor = _adorner.GetCursorForHandle(handle);
+                }
+                else if (_selectionGeometry.Rect.Contains(currentPoint))
+                {
+                    this.Cursor = System.Windows.Input.Cursors.SizeAll;
+                }
+                else
+                {
+                    this.Cursor = System.Windows.Input.Cursors.Cross;
+                }
+            }
+        }
+
+        private void HandleResize(int handle, System.Windows.Point currentPoint)
+        {
+            double x = _startRect.X;
+            double y = _startRect.Y;
+            double w = _startRect.Width;
+            double h = _startRect.Height;
+            
+            // Calculate delta? No, easier to just update specific coordinates based on handle
+            // But we need to keep anchor points.
+            
+            // 0 1 2
+            // 7   3
+            // 6 5 4
+            
+            if (handle == 0 || handle == 6 || handle == 7) // Left side
+            {
+                double right = x + w;
+                x = Math.Min(currentPoint.X, right - 1); // Prevent inversion for simplicity
+                w = right - x;
+            }
+            if (handle == 2 || handle == 3 || handle == 4) // Right side
+            {
+                w = Math.Max(currentPoint.X - x, 1);
+            }
+            if (handle == 0 || handle == 1 || handle == 2) // Top side
+            {
+                double bottom = y + h;
+                y = Math.Min(currentPoint.Y, bottom - 1);
+                h = bottom - y;
+            }
+            if (handle == 4 || handle == 5 || handle == 6) // Bottom side
+            {
+                h = Math.Max(currentPoint.Y - y, 1);
+            }
+
+            UpdateSelection(new Rect(x, y, w, h));
+        }
+
+        private void UpdateSelection(Rect rect)
+        {
+            Canvas.SetLeft(SelectionRect, rect.X);
+            Canvas.SetTop(SelectionRect, rect.Y);
+            SelectionRect.Width = rect.Width;
+            SelectionRect.Height = rect.Height;
+            _selectionGeometry.Rect = rect;
+            
+            // Update Resolution Label
+            if (rect.Width > 0 && rect.Height > 0)
+            {
+                SizeLabel.Visibility = Visibility.Visible;
+                SizeText.Text = $"{(int)rect.Width} x {(int)rect.Height}";
+                
+                Canvas.SetLeft(SizeLabel, rect.X);
+                double labelTop = rect.Y - 25;
+                if (labelTop < 0) labelTop = rect.Y + 5; // Flip inside if top edge hit
+                Canvas.SetTop(SizeLabel, labelTop);
+            }
+            else
+            {
+                SizeLabel.Visibility = Visibility.Collapsed;
+            }
+
+            UpdateToolbarPosition(rect);
+        }
+
+        private void UpdateToolbarPosition(Rect rect)
+        {
+            if (rect.Width > 0 && rect.Height > 0)
+            {
+                ToolbarPanel.Visibility = Visibility.Visible;
+                
+                double width = ToolbarPanel.ActualWidth;
+                double height = ToolbarPanel.ActualHeight;
+                
+                if (width == 0 || height == 0)
+                {
+                    ToolbarPanel.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+                    width = ToolbarPanel.DesiredSize.Width;
+                    height = ToolbarPanel.DesiredSize.Height;
+                }
+
+                double left = rect.Right - width;
+                if (left < rect.Left) left = rect.Left; // Keep within left bound if too narrow
+                if (left < 0) left = 0;
+                if (left + width > this.ActualWidth) left = this.ActualWidth - width;
+                
+                double top = rect.Bottom + 5;
+                if (top + height > this.ActualHeight)
+                {
+                    top = rect.Top - height - 5; // Flip to top if no space below
+                }
+                
+                Canvas.SetLeft(ToolbarPanel, Math.Max(0, left));
+                Canvas.SetTop(ToolbarPanel, Math.Max(0, top));
+            }
+            else
+            {
+                ToolbarPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void OnMouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+                        if (_currentTool != AnnotationTool.None && _isDrawing)
+            {
+                HandleDrawingMouseMove(currentPoint);
+                e.Handled = true;
+                return;
+            }
+                        if (_isDrawing)
+            {
+                HandleDrawingMouseUp();
+                e.Handled = true;
+                return;
+            }
+            if (_isSelecting)
+            {
+                _isSelecting = false;
+                _adorner.Update(_selectionGeometry.Rect);
+                UpdateToolbarPosition(_selectionGeometry.Rect); // Update again to ensure correct size/pos
+                _resizeHandleIndex = -1;
+            }
+        }
+
+        private void OnConfirmClick(object sender, RoutedEventArgs e)
+        {
+            // Copy to clipboard
+            try
+            {
+                var cropped = CropBitmap(BackgroundImage.Source as BitmapSource, _selectionGeometry.Rect);
+                System.Windows.Clipboard.SetImage(cropped);
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Failed to copy: {ex.Message}");
+            }
+        }
+
+        private void OnSaveClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp",
+                    FileName = $"Screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.png"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                     var cropped = CropBitmap(BackgroundImage.Source as BitmapSource, _selectionGeometry.Rect);
+                     using (var fileStream = new System.IO.FileStream(dialog.FileName, System.IO.FileMode.Create))
+                     {
+                         BitmapEncoder encoder = new PngBitmapEncoder();
+                         if (dialog.FilterIndex == 2) encoder = new JpegBitmapEncoder();
+                         else if (dialog.FilterIndex == 3) encoder = new BmpBitmapEncoder();
+                         
+                         encoder.Frames.Add(BitmapFrame.Create(cropped));
+                         encoder.Save(fileStream);
+                     }
+                     this.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Failed to save: {ex.Message}");
+            }
+        }
+
+        private void OnCancelClick(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private BitmapSource CropBitmap(BitmapSource source, Rect rect)
+        {
+            if (source == null) return null;
+            
+            // Adjust rect to integer coordinates/sizes
+            int x = (int)rect.X;
+            int y = (int)rect.Y;
+            int w = (int)rect.Width;
+            int h = (int)rect.Height;
+            
+            if (w <= 0 || h <= 0) return null;
+
+            return new CroppedBitmap(source, new Int32Rect(x, y, w, h));
+        }
+    }
+}
+
