@@ -1,56 +1,55 @@
-# RefScrn - 极简贴图与截图工具
+# RefScrn Screenshot Tool
 
-RefScrn 是一款基于 C# WPF 开发的高效界面截图与标注工具。旨在提供极速的截图体验、丰富的标注功能以及便捷的保存方式。
+RefScrn is a lightweight, efficient screenshot tool built with .NET 8.0 and WPF, designed for Windows. It features a modern overlay, rich annotation capabilities, and integrated OCR/translation services.
 
-## ? 核心特性
+## ? Key Features
 
-- **全局快捷键**：一键触发截图，默认快捷键 `Alt + A`。
-- **智能选取**：灵活精准的屏幕选取逻辑，支持多显示器 DPI 感知。
-- **OCR 翻译**：一键识别截取区域内的英文并翻译为中文，内置于工具栏。
-- **丰富标注**：
-  - **矩形/椭圆**：强调重点区域。
-  - **箭头/画笔**：指引流程或自由创作。
-  - **文字注入**：直接在截图上添加注释。
-- **多样化颜色**：内置 8 种高饱和度颜色，满足不同标注场景。
-- **便捷保存**：
-  - **保存至本地**：支持 PNG/JPG/BMP，关联偏好路径。
-  - **复制到剪贴板**：一键完成，直接粘贴。
-  - **快速确认**：标注完成后直接双击或点击确认按钮。
-- **智能设置**：
-  - **自定义快捷键**：录入式设置，简单直观。
-  - **路径记忆**：自动关联保存目录，支持动态记忆。
-  - **开机自启**：集成系统托盘，随时待命。
+- **Quick Capture**: Global hotkey (`Alt + A`) to start capturing instantly.
+- **Smart Selection**: Drag to select, with support for resizing from **all 4 edges and corners**.
+- **Rich Annotation**: 
+  - **Rectangle/Ellipse**: Standard shape tools.
+  - **Arrow**: **WeChat-style solid arrow** for clear indication.
+  - **Brush**: Freehand drawing.
+  - **Mosaic**: Pixelate sensitive information.
+  - **Text**: Add text with a **WeChat-style green caret** and borderless editing experience.
+- **OCR & Translation**: 
+  - **Text Recognition**: Extract text from potential areas directly.
+  - **Auto-Translation**: Automatically translates recognized text in a dedicated window.
+  - **Clean UI**: Minimalist result window with "Original" and "Translation" tabs.
+- **Undo/Redo**: Full history support for annotations.
 
-## ? 使用指南
+## ? Getting Started
 
-### 1. 快速开始
-- 运行 `RefScrn.exe`。
-- 按下 `Alt + A` 进入截图模式。
-- 拖动鼠标左键选择区域。
+1. **Launch**: Run `RefScrn.exe`. The app will minimize to the system tray.
+2. **Capture**: Press `Alt + A` (default) to enter capture mode.
+3. **Select**: Click and drag to select a screen area.
+   - *Tip*: You can fine-tune the selection by dragging any edge or corner.
+4. **Annotate**: Use the toolbar below the selection to draw, add text, or apply mosaic.
+   - *Tip*: Right-click the mouse to cancel the current drawing or selection.
+5. **OCR**: Click the "OCR" button in the toolbar to recognize text and open the translation window.
+6. **Finish**: 
+   - **Copy**: Double-click selection or press `Enter` to copy image to clipboard.
+   - **Save**: Click the "Save" (download icon) button to save to file.
+   - **Close**: Press `Esc` to exit capture mode.
 
-### 2. 标注工具
-- 选取区域后，在下方弹出的工具栏选择标注工具（矩形、箭头、文字等）。
-- 点击已选中的标注工具可展开**调色板**切换颜色。
+## ? Project Structure
 
-### 3. 操作快捷键
-- **Alt + A** (默认)：开始截图。
-- **左键拖动**：选取区域。
-- **右键单击**：取消截图 / 结束文字输入。
-- **双击左键**：完成并复制到剪贴板。
-- **Enter**：完成并复制到剪贴板。
+- **RefScrn**: Main WPF application project.
+- **Services**: Contains logic for OCR (`OcrService`) and Translation (`TranslationService`).
+- **Assets**: Icons and resources.
 
-### 4. 系统设置
-- 右键点击系统托盘（右下角图标）选择“设置”。
-- **常规**：开启/关闭开机自启动。
-- **快捷键**：点击“设置”后按下新的组合键即可更改。
-- **保存位置**：指定截图保存的默认文件夹。
+## ?? Configuration
 
-## ?? 开发环境
+Right-click the system tray icon to access **Settings**:
+- **General**: Toggle auto-start on boot.
+- **Hotkeys**: Customize the global capture hotkey.
+- **Save Path**: Set the default directory for saved screenshots.
 
-- **框架**：.NET 8.0 / WPF
-- **系统要求**：Windows 10/11
-- **开发工具**：Visual Studio 2022 / VS Code
+## ? Requirements
+
+- **OS**: Windows 10/11 (Required for Windows OCR API)
+- **Runtime**: .NET 8.0 Desktop Runtime
 
 ---
 
-*本项目持续开发中，更多功能敬请期待。*
+*Built with ?? by Antigravity*
