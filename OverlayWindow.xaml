@@ -109,6 +109,11 @@
                                 <TextBlock Text="A" FontSize="24" FontWeight="Bold" Foreground="#333333" FontFamily="Times New Roman"/>
                             </Viewbox>
                         </Button>
+                        <Button x:Name="TranslateBtn" Width="34" Height="34" Margin="2,0" Click="OnTranslateClick" ToolTip="翻译 (英->中)">
+                            <Viewbox Width="18" Height="18">
+                                <Path Data="M12.8,2.3c-0.2,0.1-0.4,0.3-0.5,0.5c-0.1,0.2-0.1,0.4-0.1,0.7s0,0.5,0.1,0.7s0.2,0.4,0.4,0.6l3.5,3.3H5.2C4.1,8.1,3,9.2,3,10.3c0,1,1,2,2.1,2.1H8v2h1v-2h3c1.1,0,2.1-1,2.1-2.1c0-1.1-1-2.1-2.1-2.1H5.2c-0.6,0-1-0.4-1-1s0.4-1,1-1H16l-3.2-3.1" Fill="#333333"/>
+                            </Viewbox>
+                        </Button>
                         <Rectangle Width="1" Height="18" Fill="#EEEEEE" Margin="6,0" VerticalAlignment="Center"/>
                         <!-- Actions -->
                         <Button Width="34" Height="34" Margin="2,0" Click="OnSaveClick" ToolTip="保存">
@@ -141,6 +146,14 @@
                         <Button Style="{StaticResource ColorButtonStyle}" Background="#5856D6" Click="OnColorClick"/> <!-- Purple -->
                         <Button Style="{StaticResource ColorButtonStyle}" Background="#000000" Click="OnColorClick"/> <!-- Black -->
                         <Button Style="{StaticResource ColorButtonStyle}" Background="#FFFFFF" Click="OnColorClick"/> <!-- White -->
+                    </StackPanel>
+                </Border>
+
+                <!-- Translation Result Overlay -->
+                <Border x:Name="TranslationResultOverlay" Margin="0,5,0,0" IsHitTestVisible="False" Background="#E6000000" CornerRadius="4" Visibility="Collapsed" MaxWidth="400" Padding="10">
+                    <StackPanel>
+                        <TextBlock x:Name="OriginalTextBlock" Text="" Foreground="#AAAAAA" FontSize="12" Margin="0,0,0,5" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="TranslatedTextBlock" Text="..." Foreground="White" FontSize="14" FontWeight="Bold" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

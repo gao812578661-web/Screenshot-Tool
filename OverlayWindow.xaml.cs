@@ -28,6 +28,7 @@ namespace RefScrn
         private bool _isDrawing = false;
         private System.Windows.Media.Brush _drawColor;
         private double _drawThickness = 3.0;
+        private Services.TranslationService _translationService;
 
         private Services.AppSettings _settings;
 
@@ -342,6 +343,44 @@ namespace RefScrn
                         ColorPanel.Visibility = Visibility.Visible;
                     }
                 }
+            }
+        }
+
+        private async void OnTranslateClick(object sender, RoutedEventArgs e)
+        {
+            if (_translationService == null) _translationService = new Services.TranslationService();
+            
+            var rect = _selectionGeometry.Rect;
+            if (rect.Width <= 0 || rect.Height <= 0) return;
+
+            try
+            {
+                // Show loading state
+                TranslationResultOverlay.Visibility = Visibility.Visible;
+                OriginalTextBlock.Text = "正在识别并翻译...";
+                TranslatedTextBlock.Text = "...";
+
+                // Capture selection area
+                var rtb = new RenderTargetBitmap((int)this.ActualWidth, (int)this.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                rtb.Render(this); // Just capture background + annotations
+                var crop = new CroppedBitmap(rtb, new Int32Rect((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height));
+
+                // Call service
+                var result = await _translationService.AnalyzeAndTranslateAsync(crop);
+                
+                if (result.Success)
+                {
+                    OriginalTextBlock.Text = result.OriginalText;
+                    TranslatedTextBlock.Text = result.TranslatedText;
+                }
+                else
+                {
+                    TranslatedTextBlock.Text = $"错误: {result.ErrorMessage}";
+                }
+            }
+            catch (Exception ex)
+            {
+                TranslatedTextBlock.Text = $"异常: {ex.Message}";
             }
         }
 
