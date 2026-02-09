@@ -22,45 +22,100 @@ public partial class App : System.Windows.Application
     public App()
     {
         _startupTimer = System.Diagnostics.Stopwatch.StartNew();
+        
+        // Register Global Exception Handlers
+        this.DispatcherUnhandledException += OnDispatcherUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+        System.Threading.Tasks.TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        
+        LogService.Info("=== App Instance Starting ===");
     }
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
         
+        LogService.Info("OnStartup initiated.");
+
         // Ensure single instance
         const string appName = "RefScrn_SingleInstance_Mutex";
         bool createdNew;
-        _mutex = new Mutex(true, appName, out createdNew);
-
-        if (!createdNew)
+        try 
         {
+            _mutex = new Mutex(true, appName, out createdNew);
+            if (!createdNew)
+            {
+                LogService.Info("Another instance is already running. Showing alert and shutting down.");
+                MessageBox.Show("程序已在运行中。\n请检查系统托盘中的 RefScrn 图标。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                Shutdown();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Mutex creation failed", ex);
+        }
+
+        try 
+        {
+            LogService.Info("Initializing services...");
+            _settingsService = new Services.SettingsService();
+            _hotkeyService = new GlobalHotkeyService();
+            _trayService = new SystemTrayService(ShutdownApp, ShowSettings);
+            _trayService.ShowMessage("RefScrn", "已在后台运行。按 Alt+A 开始截图。");
+            LogService.Info("Services initialized successfully.");
+        }
+        catch (Exception ex)
+        {
+            LogService.Error("Critical service initialization failed", ex);
+            MessageBox.Show($"启动失败: {ex.Message}\n详情请见日志: {LogService.GetLogPath()}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
             return;
         }
 
-        _settingsService = new Services.SettingsService();
-        _hotkeyService = new GlobalHotkeyService();
-        _trayService = new SystemTrayService(ShutdownApp, ShowSettings);
-        _trayService.ShowMessage("RefScrn", "Running in background. Check Settings for Hotkey.");
-
         _startupTimer.Stop();
-        Console.WriteLine($"[Performance] Startup took: {_startupTimer.ElapsedMilliseconds} ms");
+        LogService.Info($"[Performance] Startup took: {_startupTimer.ElapsedMilliseconds} ms");
 
         // Create hidden MainWindow to receive header
-        var mainWindow = new MainWindow();
-        mainWindow.WindowStyle = WindowStyle.None;
-        mainWindow.ShowInTaskbar = false;
-        mainWindow.Width = 0;
-        mainWindow.Height = 0;
-        mainWindow.Opacity = 0;
-        mainWindow.Show(); // Must show to ensure Handle is created
-        mainWindow.Hide(); // Hide immediately (Handle remains valid)
-        this.MainWindow = mainWindow;
+        try 
+        {
+            var mainWindow = new MainWindow();
+            mainWindow.WindowStyle = WindowStyle.None;
+            mainWindow.ShowInTaskbar = false;
+            mainWindow.Width = 0;
+            mainWindow.Height = 0;
+            mainWindow.Opacity = 0;
+            mainWindow.Show(); // Must show to ensure Handle is created
+            mainWindow.Hide(); // Hide immediately (Handle remains valid)
+            this.MainWindow = mainWindow;
+            LogService.Info("Hidden background window created.");
+        }
+        catch (Exception ex)
+        {
+             LogService.Error("Failed to create hidden main window", ex);
+        }
 
         RegisterCurrentHotkey();
-        
-        // SettingsService handles auto-start via registry on save, so we just load state here
+    }
+
+    private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    {
+        LogService.Error("UI Thread Unhandled Exception", e.Exception);
+        MessageBox.Show($"发生程序错误 (UI): {e.Exception.Message}\n日志已保存至: {LogService.GetLogPath()}", "程序异常", MessageBoxButton.OK, MessageBoxImage.Error);
+        e.Handled = true;
+    }
+
+    private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        var ex = e.ExceptionObject as Exception;
+        LogService.Error("AppDomain Unhandled Exception", ex);
+        MessageBox.Show($"发生严重错误: {ex?.Message}\n程序即将退出。", "严重错误", MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+
+    private void OnUnobservedTaskException(object sender, System.Threading.Tasks.UnobservedTaskExceptionEventArgs e)
+    {
+        LogService.Error("Unobserved Task Exception", e.Exception);
+        e.SetObserved();
     }
 
     public void RegisterCurrentHotkey()
@@ -75,13 +130,11 @@ public partial class App : System.Windows.Application
          {
              var (modifiers, key) = ParseHotkey(hotkeyStr);
              _hotkeyService.Register(MainWindow, modifiers, key, OnHotkeyTriggered);
-             
-             // Notify user of success (Optional, but good for verification)
-             // _trayService.ShowMessage("RefScrn", $"快捷键已更新为: {hotkeyStr}");
+             LogService.Info($"Hotkey registered: {hotkeyStr}");
          }
          catch(Exception ex)
          {
-              Console.WriteLine($"Failed to register hotkey '{hotkeyStr}': {ex.Message}");
+              LogService.Error($"Failed to register hotkey '{hotkeyStr}'", ex);
               _trayService.ShowMessage("错误", $"快捷键 '{hotkeyStr}' 注册失败\n{ex.Message}");
          }
     }
@@ -168,6 +221,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        LogService.Info("App exiting...");
         _trayService?.Dispose();
         _hotkeyService?.Dispose();
         _mutex?.ReleaseMutex(); // Release the mutex on exit

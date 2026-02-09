@@ -38,13 +38,13 @@ namespace RefScrn.Services
 
             if (!NativeMethods.RegisterHotKey(helper.Handle, HOTKEY_ID, mod, vKey))
             {
-                // Silently fail or log, as re-registering can be spammy. 
-                // Or handle duplicate registration gracefully.
-                 Console.WriteLine($"Failed to register hotkey. Error: {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}");
+                int error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                string errorMessage = error == 1409 ? "该热键已被其他程序占用 (Error 1409)" : $"错误代码: {error}";
+                throw new Exception(errorMessage);
             }
             else
             {
-                Console.WriteLine($"Hotkey registered successfully: {modifiers}+{key}");
+                LogService.Info($"Hotkey registered successfully: {modifiers}+{key}");
             }
         }
 

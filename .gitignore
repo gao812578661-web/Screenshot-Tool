@@ -8,3 +8,5 @@ obj/
 Publish/
 TestResults/
 publish_output/
+*.zip
+*.bak
