@@ -1,54 +1,54 @@
-# RefScrn Screenshot Tool
+# RefScrn 截图工具
 
-RefScrn is a lightweight, efficient screenshot tool built with .NET 8.0 and WPF, designed for Windows. It features a modern overlay, rich annotation capabilities, and integrated OCR/translation services.
+RefScrn 是一个基于 .NET 8.0 和 WPF 构建的轻量级、高效的 Windows 截图工具。它拥有现代化的界面覆盖层，支持丰富的标注功能，并集成了便捷的 OCR 文字识别与翻译服务。
 
-## ? Key Features
+## ? 核心功能
 
-- **Quick Capture**: Global hotkey (`Alt + A`) to start capturing instantly.
-- **Smart Selection**: Drag to select, with support for resizing from **all 4 edges and corners**.
-- **Rich Annotation**: 
-  - **Rectangle/Ellipse**: Standard shape tools.
-  - **Arrow**: **WeChat-style solid arrow** for clear indication.
-  - **Brush**: Freehand drawing.
-  - **Mosaic**: Pixelate sensitive information.
-  - **Text**: Add text with a **WeChat-style green caret** and borderless editing experience.
-- **OCR & Translation**: 
-  - **Text Recognition**: Extract text from potential areas directly.
-  - **Auto-Translation**: Automatically translates recognized text in a dedicated window.
-  - **Clean UI**: Minimalist result window with "Original" and "Translation" tabs.
-- **Undo/Redo**: Full history support for annotations.
+- **极速截图**：使用全局快捷键 (`Alt + A`) 瞬间开始截图。
+- **智能选区**：拖拽选择区域，支持从 **四个角及四条边** 自由调整大小。
+- **丰富标注**：
+  - **矩形/椭圆**：标准的形状标注工具。
+  - **箭头**：**微信风格实心箭头**，指示更清晰有力。
+  - **画笔**：自由绘制。
+  - **马赛克**：轻松隐藏敏感信息。
+  - **文字**：**微信风格文字框**，输入时绿色光标提示，完成后无边框融入背景。
+- **OCR 与翻译**：
+  - **文字识别**：一键提取截图中的文字。
+  - **自动翻译**：识别后自动在独立窗口中翻译内容。
+  - **清爽界面**：极简风格的结果展示窗口，支持“原文”与“译文”快速切换。
+- **撤销/重做**：支持完美的标注历史记录回溯。
 
-## ? Getting Started
+## ? 快速开始
 
-1. **Launch**: Run `RefScrn.exe`. The app will minimize to the system tray.
-2. **Capture**: Press `Alt + A` (default) to enter capture mode.
-3. **Select**: Click and drag to select a screen area.
-   - *Tip*: You can fine-tune the selection by dragging any edge or corner.
-4. **Annotate**: Use the toolbar below the selection to draw, add text, or apply mosaic.
-   - *Tip*: Right-click the mouse to cancel the current drawing or selection.
-5. **OCR**: Click the "OCR" button in the toolbar to recognize text and open the translation window.
-6. **Finish**: 
-   - **Copy**: Double-click selection or press `Enter` to copy image to clipboard.
-   - **Save**: Click the "Save" (download icon) button to save to file.
-   - **Close**: Press `Esc` to exit capture mode.
+1. **启动**：运行 `RefScrn.exe`，程序将最小化至系统托盘。
+2. **截图**：按下 `Alt + A` (默认) 进入截图模式。
+3. **选择**：点击并拖动鼠标左键选择屏幕区域。
+   - *提示*：通过拖动选框的边缘或角落微调选区范围。
+4. **标注**：使用选区下方的工具栏进行绘制、添加文字或马赛克。
+   - *提示*：右键单击可取消当前的绘制或选区。
+5. **OCR**：点击工具栏上的“OCR”按钮，识别文字并查看翻译。
+6. **完成**：
+   - **复制**：双击选区或按 `Enter` 键将图片复制到剪贴板。
+   - **保存**：点击“保存”按钮（下载图标）将图片保存到文件。
+   - **退出**：按 `Esc` 键退出截图模式。
 
-## ? Project Structure
+## ? 项目结构
 
-- **RefScrn**: Main WPF application project.
-- **Services**: Contains logic for OCR (`OcrService`) and Translation (`TranslationService`).
-- **Assets**: Icons and resources.
+- **RefScrn**: 主 WPF 应用程序项目。
+- **Services**: 包含 OCR (`OcrService`) 和翻译 (`TranslationService`) 逻辑。
+- **Assets**: 图标和资源文件。
 
-## ?? Configuration
+## ?? 设置配置
 
-Right-click the system tray icon to access **Settings**:
-- **General**: Toggle auto-start on boot.
-- **Hotkeys**: Customize the global capture hotkey.
-- **Save Path**: Set the default directory for saved screenshots.
+右键点击系统托盘图标，选择 **设置**：
+- **常规**：开启/关闭开机自启动。
+- **快捷键**：自定义全局截图快捷键。
+- **保存路径**：设置截图文件的默认保存目录。
 
-## ? Requirements
+## ? 系统要求
 
-- **OS**: Windows 10/11 (Required for Windows OCR API)
-- **Runtime**: .NET 8.0 Desktop Runtime
+- **操作系统**：Windows 10/11 (需支持 Windows OCR API)
+- **运行环境**：.NET 8.0 Desktop Runtime
 
 ---
 
