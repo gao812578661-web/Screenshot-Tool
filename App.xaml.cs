@@ -125,7 +125,7 @@ public partial class App : System.Windows.Application
         {
             // ...
             var (screenshot, bounds) = ScreenCaptureService.CaptureScreenUnderMouse();
-            var overlay = new OverlayWindow(screenshot, bounds.Left, bounds.Top);
+            var overlay = new OverlayWindow(screenshot, bounds.Left, bounds.Top, _settingsService.CurrentSettings);
             overlay.Show();
         }
         catch (Exception ex)

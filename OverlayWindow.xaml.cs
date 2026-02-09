@@ -29,10 +29,13 @@ namespace RefScrn
         private System.Windows.Media.Brush _drawColor;
         private double _drawThickness = 3.0;
 
-        public OverlayWindow(BitmapSource screenshot, double x, double y)
+        private Services.AppSettings _settings;
+
+        public OverlayWindow(BitmapSource screenshot, double x, double y, Services.AppSettings settings = null)
         {
             InitializeComponent();
             BackgroundImage.Source = screenshot;
+            _settings = settings;
 
             // Calculate DPI Scale for the target monitor
             GetDpiScale(x, y, out double scaleX, out double scaleY);
@@ -463,11 +466,21 @@ namespace RefScrn
                 {
                     FileName = $"Screenshot_{DateTime.Now:yyyyMMdd_HHmmss}",
                     DefaultExt = ".png",
-                    Filter = "PNG Image (.png)|*.png|JPEG Image (.jpg)|*.jpg|Bitmap Image (.bmp)|*.bmp"
+                    Filter = "PNG Image (.png)|*.png|JPEG Image (.jpg)|*.jpg|Bitmap Image (.bmp)|*.bmp",
+                    InitialDirectory = _settings?.DefaultSavePath
                 };
 
                 if (dlg.ShowDialog() == true)
                 {
+                    // Update default save path if user chose a different one
+                    if (_settings != null)
+                    {
+                        var newPath = System.IO.Path.GetDirectoryName(dlg.FileName);
+                        if (!string.IsNullOrEmpty(newPath))
+                        {
+                            _settings.DefaultSavePath = newPath;
+                        }
+                    }
                     // 3. Save to file
                     BitmapEncoder encoder = new PngBitmapEncoder(); // Default
                     if (dlg.FileName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)) encoder = new JpegBitmapEncoder();
