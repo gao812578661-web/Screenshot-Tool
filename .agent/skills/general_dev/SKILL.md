@@ -1,54 +1,50 @@
 ---
 name: general_development
-description: ×ñÑ­¡°ÓÃ»§ºËÐÄ¿ª·¢Ð­Òé¡±µÄÇáÁ¿»¯Í¨ÓÃ¿ª·¢¹¤×÷Á÷¡£°üº¬·ÖÎö¡¢¼Æ»®¡¢ÈÎÎñ·Ö½âÓëÖ´ÐÐÑéÖ¤¡£
+description: ×ñÑ­¡°ÓÃ»§ºËÐÄ¿ª·¢Ð­Òé¡±µÄÇáÁ¿»¯Í¨ÓÃ¿ª·¢¹¤×÷Á÷¡£°üº¬·ÖÎö¡¢¼Æ»®¡¢Ö´ÐÐÓëÑéÖ¤¡£
 ---
 
-# Í¨ÓÃ¿ª·¢¼¼ÄÜ (General Development Skill)
+# Í¨ÓÃ¿ª·¢ÄÜÁ¦ (General Development)
 
-±¾¼¼ÄÜÖ¼ÔÚ¹á³¹¡°ÓÃ»§ºËÐÄ¿ª·¢Ð­Òé¡±£¬È·±£¿ª·¢¹ý³Ì¸ßÐ§¡¢Í¸Ã÷ÇÒ½á¹û¿É¿Ø¡£
+±¾Ö¸ÄÏ¶¨ÒåÁËÔÚ RefScrn ÏîÄ¿ÖÐ½øÐÐ¿ª·¢Ê±±ØÐë×ñÑ­µÄ±ê×¼Á÷³ÌºÍ¹æ·¶¡£
 
-## 1. ºËÐÄÀíÄî (Core Philosophy)
+## 1. ºËÐÄÁ÷³Ì (Core Workflow)
 
-> **¼ò½àÖÁÉÏ (KISS)**
-> ÈÎºÎÉè¼ÆÓë´úÂëÓ¦±£³Ö×î¼òÐÎÊ½£¬±ÜÃâ¹ý¶È¹¤³Ì»¯¡£ÏÈÈÃËü¹¤×÷£¬ÔÙÈÃËüÍêÃÀ¡£
+### µÚÒ»½×¶Î£ºµ÷ÑÐÓë·ÖÎö (Research & Analysis)
+*   **ÊäÈë**: ÓÃ»§ÐèÇó»ò Bug ±¨¸æ¡£
+*   **¶¯×÷**: 
+    1.  ×ÐÏ¸ÔÄ¶ÁÓÃ»§ÇëÇó£¬È·ÈÏ×îÖÕÄ¿±ê¡£
+    2.  ÀûÓÃËÑË÷¹¤¾ß (`grep_search`) ºÍÖªÊ¶¿â (KIs)¡£
+    3.  ÀåÇåÏÖ×´£¬¶¨Î»¹Ø¼ü´úÂëÎ»ÖÃ¡£
+    4.  **±ØÐë**ÔÚ¿ªÊ¼Ç°ÀåÇåËùÓÐÒÉµã¡£
 
-> **Éî¶È·ÖÎö (First Principles)**
-> Óöµ½ÎÊÌâÊ±£¬»Ø¹é»ù±¾Ô­Àí½øÐÐ²ð½â£¬¶ø·ÇÃ¤Ä¿³¢ÊÔ»òÕÕ°áÏÖÓÐ·½°¸¡£ÉÆÓÃ¹¤¾ß»ñÈ¡µÚÒ»ÊÖÐÅÏ¢¡£
+### µÚ¶þ½×¶Î£º¹¹Ë¼·½°¸ (Draft Plan)
+*   **¹¤¾ß**: ´´½¨»ò¸üÐÂ `implementation_plan.md`¡£
+*   **ÄÚÈÝ**:
+    1.  **Ä¿±êËµÃ÷**: ¼òÊö±ä¸üÄ¿µÄ¡£
+    2.  **ÄâÒé±ä¸ü**: ÁÐ³öÊÜÓ°ÏìµÄÎÄ¼þºÍÂß¼­¡£
+    3.  **ÑéÖ¤¼Æ»®**: ¶¨ÒåÈçºÎÈ·ÈÏ½á¹û¿É¿Ø¡£
 
-> **ÊÂÊµÎª±¾ (Fact-Based)**
-> Ò»ÇÐ¾ö²ß»ùÓÚÈÕÖ¾¡¢²âÊÔ½á¹û»ò¹Ù·½ÎÄµµ¡£¶Ô²»È·¶¨µÄ¼ÙÉè±£³Ö»³ÒÉ£¬²¢ÓÅÏÈÑéÖ¤¡£
+### µÚÈý½×¶Î£ºÌáÇëÉóºË (Request Review)
+*   **¹¤¾ß**: `notify_user` ½«¼Æ»®³ÊÏÖ¸øÓÃ»§¡£
+*   **¶¯×÷**: µÈ´ýÓÃ»§Åú×¼»ò¸ù¾Ý·´À¡µ÷Õû¼Æ»®¡£**ÑÏ½û**ÔÚÎ´¾­Åú×¼µÄÇé¿öÏÂÖ±½Ó¿ªÊ¼´ó¹æÄ£±àÂë¡£
 
-## 2. ±ê×¼¿ª·¢Á÷³Ì (Standard Workflow)
-
-### µÚÒ»½×¶Î£º¹¹Ë¼·½°¸ (Draft Plan)
-1.  **Ã÷È·ÐèÇó**: ×ÐÏ¸ÔÄ¶ÁÓÃ»§ÇëÇó£¬È·ÈÏ×îÖÕÄ¿±ê¡£
-2.  **ÏÖ×´µ÷ÑÐ**: ¼ì²éÏÖÓÐ´úÂë (`codebase_search`) ºÍÖªÊ¶¿â (KIs)¡£
-3.  **ÖÆ¶¨¼Æ»®**: ´´½¨»ò¸üÐÂ `implementation_plan.md`¡£
-    *   **Ä¿±ê (Goal)**: Ò»¾ä»°ÃèÊöÒª×öÊ²Ã´¡£
-    *   **¹Ø¼ü±ä¸ü (Changes)**: ÁÐ³öÊÜÓ°ÏìµÄÎÄ¼þºÍÂß¼­¡£
-    *   **ÑéÖ¤·½°¸ (Verification)**: ÈçºÎÖ¤Ã÷¹¦ÄÜÕý³££¨²âÊÔÓÃÀý¡¢ÊÖ¶¯²½Öè£©¡£
-
-### µÚ¶þ½×¶Î£ºÌáÇëÉóºË (Request Review)
-1.  Ê¹ÓÃ `notify_user` ½«¼Æ»®³ÊÏÖ¸øÓÃ»§¡£
-2.  **µÈ´ýÅú×¼**: ¸ù¾ÝÓÃ»§·´À¡µ÷Õû¼Æ»®£¬Ö±µ½»ñµÃÃ÷È·Ö¸Áî¡£
-
-### µÚÈý½×¶Î£ºÈÎÎñ·Ö½â (Breakdown to Tasks)
-1.  **´´½¨/¸üÐÂÈÎÎñÇåµ¥**: Î¬»¤ `task.md`¡£
-2.  **Ï¸»¯Á£¶È**: ½«´óÈÎÎñ²ð½âÎª¿É¶ÀÁ¢Ö´ÐÐµÄÐ¡²½Öè£¨Èç¡°ÊµÏÖ UI¡±¡¢¡°±àÐ´Âß¼­¡±¡¢¡°Ôö¼Ó²âÊÔ¡±£©¡£
-3.  **¶¯Ì¬µ÷Õû**: ¿ª·¢ÖÐÓöµ½ÐÂÎÊÌâ£¬¼°Ê±»ØÌîµ½ÈÎÎñÇåµ¥¡£
-
-### µÚËÄ½×¶Î£ºÖ´ÐÐ (Execute)
-1.  **ÈÎÎñ±ß½ç**: Ã¿´Î²Ù×÷Ç°µ÷ÓÃ `task_boundary`£¬Ã÷È·µ±Ç°ÕýÔÚ×öÊ²Ã´¡£
-2.  **½¥½øÊ½±àÂë**:
+### µÚËÄ½×¶Î£º·Ö½âÓëÖ´ÐÐ (Breakdown & Execute)
+1.  **·Ö½âÈÎÎñ**: ½«´óÈÎÎñ²ð½âÎª¿É¶ÀÁ¢Ö´ÐÐµÄÐ¡²½Öè£¬Í¬²½¸üÐÂ `task.md`¡£
+2.  **ÈÎÎñ±ß½ç**: Ã¿´Î²Ù×÷Ç°µ÷ÓÃ `task_boundary`£¬Ã÷È·µ±Ç°×´Ì¬¡£
+3.  **½¥½øÊ½¿ª·¢**:
     *   Ð¡²½¿ìÅÜ£¬Æµ·±ÑéÖ¤¡£
     *   ´úÂë·ç¸ñÍ³Ò»£¬¹Ø¼üÂß¼­Ìí¼Ó×¢ÊÍ¡£
-3.  **ÑéÖ¤**:
-    *   ÔËÐÐ´úÂë£¬¼ì²éÈÕÖ¾ºÍÊä³ö¡£
-    *   ´´½¨ `walkthrough.md` ¼ÇÂ¼ÑéÖ¤¹ý³ÌºÍ½á¹û½ØÍ¼¡£
 
-### µÚÎå½×¶Î£º½»¸¶Óë¹éµµ (Delivery & Archive)
-1.  **±¾µØÌá½»**: È·±£´úÂë±ä¸üÒÑÍ¨¹ý `git commit` ±£´æµ½±¾µØ²Ö¿â¡£
-2.  **Ô¶³ÌÍÆËÍ**: **±ØÐë**Ö÷¶¯Ñ¯ÎÊÓÃ»§ÊÇ·ñ½«´úÂëÍÆËÍµ½ GitHub (`git push`)£¬ÒÔ·ÀÖ¹Êý¾Ý¶ªÊ§¡£
+### µÚÎå½×¶Î£ºÑéÖ¤Óë½»¸¶ (Verification & Delivery)
+1.  **ÑéÖ¤**: ÔËÐÐ´úÂë£¬Ö´ÐÐÊÖ¶¯»ò×Ô¶¯²âÊÔ¡£´´½¨ `walkthrough.md` ¼ÇÂ¼ÑéÖ¤¹ý³Ì¡£
+2.  **±¾µØÌá½»**: ±ä¸üÍ¨¹ýÑéÖ¤ºóÖ´ÐÐ `git commit`¡£
+3.  **ÎÄµµÍ¬²½**: Ëæ×Å¹¦ÄÜµü´ú£¬**±ØÐë**Í¬²½¸üÐÂÏîÄ¿¸ùÄ¿Â¼ÏÂµÄ `README.md`£¬È·±£Ê¹ÓÃËµÃ÷Óë´úÂëÐÐÎªÒ»ÖÂ¡£
+4.  **Ô¶³ÌÍÆËÍ**: **±ØÐë**Ö÷¶¯Ñ¯ÎÊÓÃ»§ÊÇ·ñ½«´úÂëÍÆËÍµ½ GitHub (`git push`)¡£
+
+## 2. Êä³ö¹æ·¶ (Output Standards)
+
+*   **ÓïÑÔ**: È«³ÌÊ¹ÓÃ **ÖÐÎÄ**¡£
+*   **½»»¥**: ±£³Ö¼ò½à£¬¾Û½¹¾ö²ßµã¡£ËæÊ±×¼±¸ÏìÓ¦ `'Implementation Plan,Task List and Thought in Chinese'` Ö¸Áî¡£
 
 ## 3. ³£¼û³¡¾°Ö¸ÄÏ (Common Scenarios)
 
@@ -57,17 +53,6 @@ description: ×ñÑ­¡°ÓÃ»§ºËÐÄ¿ª·¢Ð­Òé¡±µÄÇáÁ¿»¯Í¨ÓÃ¿ª·¢¹¤×÷Á÷¡£°üº¬·ÖÎö¡¢¼Æ»®¡¢ÈÎÎ
 *   ÓÅÏÈ´òÍ¨ºËÐÄÁ÷³Ì£¨Happy Path£©£¬ÔÙ´¦Àí±ßÔµÇé¿ö¡£
 
 ### Bug ÐÞ¸´
-*   **ÖØÏÖ**: ±ØÐëÏÈÄÜÎÈ¶¨¸´¼û Bug¡£
-*   **¶¨Î»**: Ê¹ÓÃ¶þ·Ö·¨»òÈÕÖ¾¶¨Î»¸ùÒò¡£
-*   **ÐÞ¸´**: Õë¶Ô¸ùÒòÐÞ¸´£¬±ÜÃâÑÚ¸ÇÎÊÌâ¡£
+*   **ÖØÏÖ**: ±ØÐëÄÜÎÈ¶¨¸´¼û Bug¡£
+*   **¶¨Î»**: Ê¹ÓÃÈÕÖ¾»ò¶Ïµã¶¨Î»¸ùÒò£¬¶ø·ÇÑÚ¸ÇÖ¢×´¡£
 *   **ÑéÖ¤**: È·ÈÏ Bug Ïû³ýÇÒÎÞ»Ø¹é¡£
-
-### ÖØ¹¹
-*   È·±£ÓÐ²âÊÔ¸²¸Ç»òÊÖ¶¯ÑéÖ¤ÊÖ¶Î¡£
-*   Ð¡²½Ìá½»£¬±£³Ö´úÂë´¦ÓÚ¿ÉÔËÐÐ×´Ì¬¡£
-
-## 4. Êä³ö¹æ·¶ (Output Standards)
-
-*   **ÓïÑÔ**: È«³ÌÊ¹ÓÃ **ÖÐÎÄ**¡£
-*   **¸ñÊ½**: Markdown ¸ñÊ½ÇåÎú£¬ÖØµã¼Ó´Ö¡£
-*   **Ö¸ÁîÏìÓ¦**: ËæÊ±×¼±¸ÏìÓ¦ `'Implementation Plan,Task List and Thought in Chinese'` Ö¸Áî¡£
