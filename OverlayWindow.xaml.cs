@@ -20,7 +20,7 @@ namespace RefScrn
         private System.Windows.Media.CombinedGeometry _maskGeometry;
 
         // Annotation State
-        private enum AnnotationTool { None, Rectangle, Ellipse, Arrow, Brush, Text }
+        private enum AnnotationTool { None, Rectangle, Ellipse, Arrow, Brush, Text, Mosaic }
         private AnnotationTool _currentTool = AnnotationTool.None;
         private System.Windows.Shapes.Shape _tempShape;
         private System.Windows.Controls.TextBox _activeTextBox;
@@ -32,8 +32,24 @@ namespace RefScrn
 
         private Services.AppSettings _settings;
         private BitmapSource _originalScreenshot;
+        private BitmapSource _mosaicBitmap;
         private double _scaleX = 1.0;
         private double _scaleY = 1.0;
+
+        private void InitMosaicBitmap()
+        {
+            if (_originalScreenshot == null) return;
+
+            // 1. Downscale to create pixelation effect (e.g., block size 15)
+            // Use TransformedBitmap directly. No need to manual copy pixels.
+            double blockSize = 15.0;
+            var transform = new ScaleTransform(1.0 / blockSize, 1.0 / blockSize);
+            var smallBmp = new TransformedBitmap(_originalScreenshot, transform);
+            
+            _mosaicBitmap = smallBmp;
+            // The ImageBrush will stretch this small bitmap to the full Viewport.
+            // NearestNeighbor on the Shape will make it pixelated.
+        }
 
         public OverlayWindow(BitmapSource screenshot, double x, double y, Services.AppSettings settings = null)
         {
@@ -216,13 +232,40 @@ namespace RefScrn
                     AnnotationCanvas.Children.Add(_tempShape);
                     break;
                 case AnnotationTool.Arrow:
-                    _tempShape = new System.Windows.Shapes.Path { Stroke = _drawColor, StrokeThickness = _drawThickness, StrokeEndLineCap = PenLineCap.Round, StrokeStartLineCap = PenLineCap.Round };
+                    _tempShape = new System.Windows.Shapes.Path 
+                    { 
+                        Stroke = _drawColor, 
+                        StrokeThickness = 4, // WeChat arrow is thicker and more visible
+                        Fill = _drawColor,   // Fill the arrowhead
+                        StrokeEndLineCap = PenLineCap.Round, 
+                        StrokeStartLineCap = PenLineCap.Round 
+                    };
                     AnnotationCanvas.Children.Add(_tempShape);
                     break;
                 case AnnotationTool.Brush:
                     var poly = new System.Windows.Shapes.Polyline { Stroke = _drawColor, StrokeThickness = _drawThickness, StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
                     poly.Points.Add(pos);
                     _tempShape = poly;
+                    AnnotationCanvas.Children.Add(_tempShape);
+                    break;
+                case AnnotationTool.Mosaic:
+                    if (_mosaicBitmap == null) InitMosaicBitmap();
+                    var mosaicPoly = new System.Windows.Shapes.Polyline
+                    {
+                        Stroke = new ImageBrush(_mosaicBitmap)
+                        {
+                            ViewportUnits = BrushMappingMode.Absolute,
+                            Viewport = new Rect(0, 0, this.ActualWidth, this.ActualHeight),
+                            Stretch = Stretch.Fill
+                        },
+                        StrokeThickness = 20, // Thicker stroke for mosaic
+                        StrokeLineJoin = PenLineJoin.Round,
+                        StrokeStartLineCap = PenLineCap.Round,
+                        StrokeEndLineCap = PenLineCap.Round
+                    };
+                    RenderOptions.SetBitmapScalingMode(mosaicPoly, BitmapScalingMode.NearestNeighbor);
+                    mosaicPoly.Points.Add(pos);
+                    _tempShape = mosaicPoly;
                     AnnotationCanvas.Children.Add(_tempShape);
                     break;
                 case AnnotationTool.Text:
@@ -237,6 +280,7 @@ namespace RefScrn
                     _isDrawing = false;
                     break;
             }
+            UpdateUndoState();
         }
 
         private void HandleDrawingMouseMove(System.Windows.Point pos)
@@ -258,7 +302,7 @@ namespace RefScrn
             {
                 UpdateArrow(_drawStartPoint, pos);
             }
-            else if (_currentTool == AnnotationTool.Brush)
+            else if (_currentTool == AnnotationTool.Brush || _currentTool == AnnotationTool.Mosaic)
             {
                 if (_tempShape is System.Windows.Shapes.Polyline poly)
                 {
@@ -273,28 +317,42 @@ namespace RefScrn
         {
             if (_tempShape is System.Windows.Shapes.Path path)
             {
-                double angle = Math.Atan2(end.Y - start.Y, end.X - start.X);
-                double arrowLength = 15;
-                double arrowAngle = Math.PI / 6; // 30 degrees
+                // WeChat-style arrow: Thin shaft, sharp filled head
+                
+                System.Windows.Vector vec = end - start;
+                double length = vec.Length;
+                if (length < 1) return;
+
+                System.Windows.Vector dir = vec;
+                dir.Normalize();
+
+                // Arrow head configuration (WeChat style is robust)
+                double headLength = 18; // Increased from 15
+                double headWidth = 12;  // Increased from 10
+                
+                // Calculate arrow head points
+                // We want the tip to be at 'end'
+                // The base of the head is at 'end - dir * headLength'
+                // The wings are displaced perpendicularly
+                
+                System.Windows.Vector perpendicular = new System.Windows.Vector(-dir.Y, dir.X);
+                
+                System.Windows.Point tip = end;
+                System.Windows.Point baseCenter = end - dir * headLength;
+                System.Windows.Point wing1 = baseCenter + perpendicular * (headWidth / 2);
+                System.Windows.Point wing2 = baseCenter - perpendicular * (headWidth / 2);
 
                 var geometry = new System.Windows.Media.StreamGeometry();
                 using (var ctx = geometry.Open())
                 {
-                    // Figure 1: Shaft (Start -> End)
+                    // Draw Shaft (Start to BaseCenter)
                     ctx.BeginFigure(start, false, false);
-                    ctx.LineTo(end, true, false);
-
-                    // Figure 2: Arrow Head (Wing1 -> Tip -> Wing2)
-                    System.Windows.Point p1 = new System.Windows.Point(
-                        end.X - arrowLength * Math.Cos(angle - arrowAngle),
-                        end.Y - arrowLength * Math.Sin(angle - arrowAngle));
-                    System.Windows.Point p2 = new System.Windows.Point(
-                        end.X - arrowLength * Math.Cos(angle + arrowAngle),
-                        end.Y - arrowLength * Math.Sin(angle + arrowAngle));
-
-                    ctx.BeginFigure(p1, false, false);
-                    ctx.LineTo(end, true, false);
-                    ctx.LineTo(p2, true, false);
+                    ctx.LineTo(baseCenter, true, false);
+                    
+                    // Arrow Head (Closed figure to allow fill)
+                    ctx.BeginFigure(tip, true, true);
+                    ctx.LineTo(wing1, true, false);
+                    ctx.LineTo(wing2, true, false);
                 }
                 path.Data = geometry;
             }
@@ -310,7 +368,9 @@ namespace RefScrn
                 Foreground = _drawColor,
                 Background = System.Windows.Media.Brushes.Transparent,
                 BorderThickness = new System.Windows.Thickness(1),
-                BorderBrush = System.Windows.Media.Brushes.Gray,
+                BorderBrush = System.Windows.Media.Brushes.White, // Revert to White/Light for standard editing look
+                CaretBrush = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#07C160")), // Keep WeChat Green Caret
+                Padding = new System.Windows.Thickness(5),
                 MinWidth = 50,
                 AcceptsReturn = true
             };
@@ -321,6 +381,7 @@ namespace RefScrn
             tb.Loaded += (s, ev) => tb.Focus();
             tb.LostFocus += (s, ev) => FinalizeText();
             _activeTextBox = tb;
+            UpdateUndoState();
         }
 
         private void FinalizeText()
@@ -399,6 +460,7 @@ namespace RefScrn
                 AnnotationCanvas.Children.Add(border);
             }
             _activeTextBox = null;
+            UpdateUndoState();
         }
 
         private void OnToolClick(object sender, RoutedEventArgs e)
@@ -653,12 +715,21 @@ namespace RefScrn
         {
             System.Windows.Rect r = _selectionGeometry.Rect;
             if (r.Width <= 0) return -1;
-            double t = 10;
-            if (new System.Windows.Rect(r.Left - t, r.Top - t, 2 * t, 2 * t).Contains(pos)) return 0;
-            if (new System.Windows.Rect(r.Right - t, r.Top - t, 2 * t, 2 * t).Contains(pos)) return 2;
-            if (new System.Windows.Rect(r.Right - t, r.Bottom - t, 2 * t, 2 * t).Contains(pos)) return 4;
-            if (new System.Windows.Rect(r.Left - t, r.Bottom - t, 2 * t, 2 * t).Contains(pos)) return 6;
-            if (r.Contains(pos)) return -2;
+            double t = 10; // Tolerance
+
+            // Corners (Priority)
+            if (new System.Windows.Rect(r.Left - t, r.Top - t, 2 * t, 2 * t).Contains(pos)) return 0; // Top-Left
+            if (new System.Windows.Rect(r.Right - t, r.Top - t, 2 * t, 2 * t).Contains(pos)) return 2; // Top-Right
+            if (new System.Windows.Rect(r.Right - t, r.Bottom - t, 2 * t, 2 * t).Contains(pos)) return 4; // Bottom-Right
+            if (new System.Windows.Rect(r.Left - t, r.Bottom - t, 2 * t, 2 * t).Contains(pos)) return 6; // Bottom-Left
+
+            // Edges
+            if (new System.Windows.Rect(r.Left + t, r.Top - t, Math.Max(0, r.Width - 2 * t), 2 * t).Contains(pos)) return 1; // Top
+            if (new System.Windows.Rect(r.Right - t, r.Top + t, 2 * t, Math.Max(0, r.Height - 2 * t)).Contains(pos)) return 3; // Right
+            if (new System.Windows.Rect(r.Left + t, r.Bottom - t, Math.Max(0, r.Width - 2 * t), 2 * t).Contains(pos)) return 5; // Bottom
+            if (new System.Windows.Rect(r.Left - t, r.Top + t, 2 * t, Math.Max(0, r.Height - 2 * t)).Contains(pos)) return 7; // Left
+
+            if (r.Contains(pos)) return -2; // Inside (Move)
             return -1;
         }
 
@@ -667,7 +738,9 @@ namespace RefScrn
             switch (index)
             {
                 case 0: case 4: return System.Windows.Input.Cursors.SizeNWSE;
+                case 1: case 5: return System.Windows.Input.Cursors.SizeNS;
                 case 2: case 6: return System.Windows.Input.Cursors.SizeNESW;
+                case 3: case 7: return System.Windows.Input.Cursors.SizeWE;
                 case -2: return System.Windows.Input.Cursors.SizeAll;
                 default: return System.Windows.Input.Cursors.Arrow;
             }
@@ -680,8 +753,14 @@ namespace RefScrn
             SelectionRect.Width = rect.Width;
             SelectionRect.Height = rect.Height;
             SelectionRect.Visibility = Visibility.Visible;
-            _selectionGeometry.Rect = rect;
             
+            // Update the existing geometry's Rect, which updates the MaskPath binding
+            _selectionGeometry.Rect = rect;
+
+            // Update AnnotationCanvas clip to match selection
+            // We create a new geometry for the clip to avoid sharing the same instance if that causes issues
+            AnnotationCanvas.Clip = new RectangleGeometry(rect);
+
             SizeText.Text = $"{(int)rect.Width} x {(int)rect.Height}";
             SizeLabel.Visibility = Visibility.Visible;
             System.Windows.Controls.Canvas.SetLeft(SizeLabel, rect.X);
@@ -761,10 +840,97 @@ namespace RefScrn
         private void OnCancelClick(object sender, RoutedEventArgs e) { this.Close(); }
         private void OnConfirmClick(object sender, RoutedEventArgs e) { SaveToClipboard(); this.Close(); }
 
-        private void OnOcrClick(object sender, RoutedEventArgs e)
+        private Services.OcrService _ocrService;
+
+        private async void OnOcrClick(object sender, RoutedEventArgs e)
         {
-            // TODO: 实现文字识别功能
-            System.Windows.MessageBox.Show("文字识别功能开发中...", "提示", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            if (_ocrService == null) _ocrService = new Services.OcrService();
+
+            // Toggle visibility if already visible
+            if (TranslationResultOverlay.Visibility == Visibility.Visible)
+            {
+                TranslationResultOverlay.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var rect = _selectionGeometry.Rect;
+            if (rect.Width <= 0 || rect.Height <= 0) return;
+
+            try
+            {
+                // 1. Position and show loading state
+                Canvas.SetLeft(TranslationResultOverlay, rect.X);
+                Canvas.SetTop(TranslationResultOverlay, rect.Y);
+                TranslationResultOverlay.Width = rect.Width;
+                TranslationResultOverlay.Height = rect.Height;
+                TranslationResultOverlay.Children.Clear();
+                TranslationResultOverlay.Children.Add(new TextBlock 
+                { 
+                    Text = "正在识别文字...", 
+                    Foreground = System.Windows.Media.Brushes.White,
+                    Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(180, 0, 0, 0)),
+                    Padding = new System.Windows.Thickness(5),
+                    FontSize = 14
+                });
+                TranslationResultOverlay.Visibility = Visibility.Visible;
+
+                // 2. Hide specific UI for clean capture
+                ToolbarArea.Visibility = Visibility.Collapsed;
+                if (MaskPath != null) MaskPath.Visibility = Visibility.Collapsed;
+                this.UpdateLayout();
+
+                // 3. Capture high-res crop
+                var crop = GetCroppedCapture(rect, hideSelectionUI: false);
+                if (crop == null)
+                {
+                    ToolbarArea.Visibility = Visibility.Visible;
+                    if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
+                    return;
+                }
+
+                // 4. Restore mask immediately
+                if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
+
+                // 5. Call service
+                var result = await _ocrService.RecognizeTextAsync(crop);
+                
+                if (result.Success)
+                {
+                    // Construct full text
+                    var fullText = string.Join(Environment.NewLine, result.Lines.Select(l => l.Text));
+                    
+                    // Open Result Window
+                    var resultWin = new TextRecognitionWindow(crop, fullText);
+                    resultWin.Show();
+                    
+                    // Close this overlay window as the action is complete
+                    this.Close();
+                }
+                else
+                {
+                    // Error fallback
+                    TranslationResultOverlay.Children.Clear();
+                    TranslationResultOverlay.Children.Add(new TextBlock 
+                    { 
+                        Text = $"错误: {result.ErrorMessage}", 
+                        Foreground = System.Windows.Media.Brushes.Red,
+                        FontSize = 14,
+                        Background = System.Windows.Media.Brushes.White
+                    });
+                    TranslationResultOverlay.Visibility = Visibility.Visible;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Simple error display
+                TranslationResultOverlay.Children.Clear();
+                TranslationResultOverlay.Children.Add(new TextBlock { Text = $"异常: {ex.Message}", Foreground = System.Windows.Media.Brushes.Red });
+                TranslationResultOverlay.Visibility = Visibility.Visible;
+            }
+            finally
+            {
+                ToolbarArea.Visibility = Visibility.Visible; // Always restore toolbar
+            }
         }
 
         private void OnLongScreenshotClick(object sender, RoutedEventArgs e)
@@ -775,8 +941,28 @@ namespace RefScrn
 
         private void OnUndoClick(object sender, RoutedEventArgs e)
         {
-            // TODO: 实现撤销功能
-            System.Windows.MessageBox.Show("撤销功能开发中...", "提示", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            if (AnnotationCanvas.Children.Count > 0)
+            {
+                var lastElement = AnnotationCanvas.Children[AnnotationCanvas.Children.Count - 1];
+                
+                // If we are undoing the currently active text box, clear the reference
+                if (lastElement == _activeTextBox)
+                {
+                    _activeTextBox = null;
+                    _isDrawing = false;
+                }
+
+                AnnotationCanvas.Children.RemoveAt(AnnotationCanvas.Children.Count - 1);
+                UpdateUndoState();
+            }
+        }
+
+        private void UpdateUndoState()
+        {
+            if (UndoBtn != null)
+            {
+                UndoBtn.IsEnabled = AnnotationCanvas.Children.Count > 0;
+            }
         }
 
         private void SaveToClipboard()

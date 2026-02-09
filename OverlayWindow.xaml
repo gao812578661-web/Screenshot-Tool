@@ -172,13 +172,33 @@
                             </Viewbox>
                         </Button>
                         <!-- 撤销 -->
-                        <Button x:Name="UndoBtn" Width="34" Height="34" Margin="2,0" Click="OnUndoClick" ToolTip="撤销">
+                        <Button x:Name="UndoBtn" Width="34" Height="34" Margin="2,0" Click="OnUndoClick" ToolTip="撤销" IsEnabled="False">
+                            <Button.Resources>
+                                <Style TargetType="Path" x:Key="UndoArcStyle">
+                                    <Setter Property="Stroke" Value="#333333"/>
+                                    <Setter Property="StrokeThickness" Value="3"/>
+                                    <Setter Property="Fill" Value="Transparent"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                            <Setter Property="Stroke" Value="#AAAAAA"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                                <Style TargetType="Path" x:Key="UndoArrowStyle">
+                                    <Setter Property="Fill" Value="#333333"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                            <Setter Property="Fill" Value="#AAAAAA"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Resources>
                             <Viewbox Width="18" Height="18">
                                 <Canvas Width="24" Height="24">
-                                    <!-- 粗圆弧 从12点顺时针到9点，缺口在9-12点 -->
-                                    <Path Data="M12,4 A8,8 0 1,1 4,12" Stroke="#333333" StrokeThickness="3" Fill="Transparent"/>
-                                    <!-- 三角箭头，底边中点Y=4与圆弧起始端对齐，尖角指向9点钟方向 -->
-                                    <Path Data="M12,1 L7,4 L12,7 Z" Fill="#333333"/>
+                                    <!-- 粗圆弧 从12点顺时针到9点 -->
+                                    <Path Style="{StaticResource UndoArcStyle}" Data="M12,4 A8,8 0 1,1 4,12" />
+                                    <!-- 三角箭头 -->
+                                    <Path Style="{StaticResource UndoArrowStyle}" Data="M12,1 L7,4 L12,7 Z" />
                                 </Canvas>
                             </Viewbox>
                         </Button>
