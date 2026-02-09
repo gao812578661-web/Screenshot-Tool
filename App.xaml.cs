@@ -15,6 +15,7 @@ public partial class App : System.Windows.Application
     private SystemTrayService _trayService;
     private Services.SettingsService _settingsService;
     private SettingsWindow _settingsWindow;
+    private OverlayWindow _currentOverlay; // 跟踪当前打开的截图窗口
     private Mutex _mutex; // Added for single instance
     private System.Diagnostics.Stopwatch _startupTimer;
 
@@ -119,14 +120,22 @@ public partial class App : System.Windows.Application
 
     private void OnHotkeyTriggered()
     {
-        // ... (existing logic) inside OnHotkeyTriggered is fine, but I replaced the whole method to match line numbers comfortably
         Console.WriteLine("App.OnHotkeyTriggered: Hotkey pressed!");
+        
+        // 如果已经有打开的 OverlayWindow，先关闭它
+        if (_currentOverlay != null && _currentOverlay.IsLoaded)
+        {
+            _currentOverlay.Close();
+            _currentOverlay = null;
+            return; // 本次按键用于关闭现有窗口
+        }
+        
         try
         {
-            // ...
             var (screenshot, bounds) = ScreenCaptureService.CaptureScreenUnderMouse();
-            var overlay = new OverlayWindow(screenshot, bounds.Left, bounds.Top, _settingsService.CurrentSettings);
-            overlay.Show();
+            _currentOverlay = new OverlayWindow(screenshot, bounds.Left, bounds.Top, _settingsService.CurrentSettings);
+            _currentOverlay.Closed += (s, e) => _currentOverlay = null; // 窗口关闭时清空引用
+            _currentOverlay.Show();
         }
         catch (Exception ex)
         {

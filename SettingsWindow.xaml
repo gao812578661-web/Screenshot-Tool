@@ -108,6 +108,12 @@
                 </Button>
                 <Button x:Name="CancelButton" Content="Cancel" Width="90" Margin="12,0,0,0" Style="{StaticResource NormalButton}" Click="OnCancelClick" Height="32"/>
             </StackPanel>
+
+            <!-- Version Info -->
+            <TextBlock x:Name="VersionText" Text="V1.0.0" 
+                       FontSize="11" Foreground="#999999" 
+                       HorizontalAlignment="Center" 
+                       Margin="0,15,0,0"/>
         </StackPanel>
     </Border>
 </Window>

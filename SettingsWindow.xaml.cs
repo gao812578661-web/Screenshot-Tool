@@ -32,6 +32,13 @@ namespace RefScrn
             if (HotkeysHeader != null) HotkeysHeader.Text = "快捷键";
             if (SavePathHeader != null) SavePathHeader.Text = "保存位置";
 
+            // 设置版本号
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            if (VersionText != null && version != null)
+            {
+                VersionText.Text = $"V{version.Major}.{version.Minor}.{version.Build}";
+            }
+
             this.PreviewKeyDown += OnPreviewKeyDown;
             LoadUI();
         }

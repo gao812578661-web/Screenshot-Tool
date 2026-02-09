@@ -71,6 +71,23 @@ namespace RefScrn
 
             if (_currentTool != AnnotationTool.None && _selectionGeometry.Rect.Contains(pos))
             {
+                // 检查是否点击了文字块，如果是则不拦截，让事件传递到文字块处理拖动
+                var hitElement = e.OriginalSource as FrameworkElement;
+                if (hitElement is System.Windows.Controls.Border || hitElement is System.Windows.Controls.TextBlock)
+                {
+                    // 检查这个元素是否在 AnnotationCanvas 中（是文字标注）
+                    var parent = System.Windows.Media.VisualTreeHelper.GetParent(hitElement);
+                    while (parent != null)
+                    {
+                        if (parent == AnnotationCanvas)
+                        {
+                            // 是文字标注，不拦截事件
+                            return;
+                        }
+                        parent = System.Windows.Media.VisualTreeHelper.GetParent(parent);
+                    }
+                }
+                
                 HandleDrawingMouseDown(pos);
                 e.Handled = true;
                 return;
@@ -209,6 +226,13 @@ namespace RefScrn
                     AnnotationCanvas.Children.Add(_tempShape);
                     break;
                 case AnnotationTool.Text:
+                    // 检查是否点击了已有的文字块（现在是 Border 容器），如果是则不创建新文字框
+                    var hitElement = AnnotationCanvas.InputHitTest(pos) as FrameworkElement;
+                    if (hitElement is System.Windows.Controls.Border || hitElement is System.Windows.Controls.TextBlock)
+                    {
+                        _isDrawing = false;
+                        return; // 点击的是已有文字，不创建新文字框
+                    }
                     CreateTextBox(pos);
                     _isDrawing = false;
                     break;
@@ -311,6 +335,7 @@ namespace RefScrn
             
             if (!string.IsNullOrWhiteSpace(text))
             {
+                // 使用 Border 包装 TextBlock 以获得更好的鼠标事件支持
                 var textBlock = new System.Windows.Controls.TextBlock
                 {
                     Text = text,
@@ -318,9 +343,60 @@ namespace RefScrn
                     Foreground = _drawColor,
                     FontFamily = new System.Windows.Media.FontFamily("Microsoft YaHei")
                 };
-                System.Windows.Controls.Canvas.SetLeft(textBlock, left);
-                System.Windows.Controls.Canvas.SetTop(textBlock, top + 2);
-                AnnotationCanvas.Children.Add(textBlock);
+                
+                var border = new System.Windows.Controls.Border
+                {
+                    Child = textBlock,
+                    Background = System.Windows.Media.Brushes.Transparent,
+                    Padding = new System.Windows.Thickness(2),
+                    Cursor = System.Windows.Input.Cursors.Hand
+                };
+                
+                System.Windows.Controls.Canvas.SetLeft(border, left);
+                System.Windows.Controls.Canvas.SetTop(border, top);
+                
+                // 添加拖动功能到 Border
+                System.Windows.Point? dragStart = null;
+                System.Windows.Point? elementStart = null;
+                bool isDragging = false;
+                
+                border.PreviewMouseLeftButtonDown += (s, e) =>
+                {
+                    dragStart = e.GetPosition(AnnotationCanvas);
+                    elementStart = new System.Windows.Point(
+                        System.Windows.Controls.Canvas.GetLeft(border),
+                        System.Windows.Controls.Canvas.GetTop(border)
+                    );
+                    isDragging = true;
+                    border.CaptureMouse();
+                    e.Handled = true;
+                };
+                
+                border.PreviewMouseMove += (s, e) =>
+                {
+                    if (isDragging && dragStart.HasValue && elementStart.HasValue && border.IsMouseCaptured)
+                    {
+                        var currentPos = e.GetPosition(AnnotationCanvas);
+                        var offset = currentPos - dragStart.Value;
+                        System.Windows.Controls.Canvas.SetLeft(border, elementStart.Value.X + offset.X);
+                        System.Windows.Controls.Canvas.SetTop(border, elementStart.Value.Y + offset.Y);
+                        e.Handled = true;
+                    }
+                };
+                
+                border.PreviewMouseLeftButtonUp += (s, e) =>
+                {
+                    if (isDragging)
+                    {
+                        isDragging = false;
+                        border.ReleaseMouseCapture();
+                        dragStart = null;
+                        elementStart = null;
+                        e.Handled = true;
+                    }
+                };
+                
+                AnnotationCanvas.Children.Add(border);
             }
             _activeTextBox = null;
         }
