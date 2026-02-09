@@ -761,6 +761,24 @@ namespace RefScrn
         private void OnCancelClick(object sender, RoutedEventArgs e) { this.Close(); }
         private void OnConfirmClick(object sender, RoutedEventArgs e) { SaveToClipboard(); this.Close(); }
 
+        private void OnOcrClick(object sender, RoutedEventArgs e)
+        {
+            // TODO: 实现文字识别功能
+            System.Windows.MessageBox.Show("文字识别功能开发中...", "提示", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+
+        private void OnLongScreenshotClick(object sender, RoutedEventArgs e)
+        {
+            // TODO: 实现长截图功能
+            System.Windows.MessageBox.Show("长截图功能开发中...", "提示", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+
+        private void OnUndoClick(object sender, RoutedEventArgs e)
+        {
+            // TODO: 实现撤销功能
+            System.Windows.MessageBox.Show("撤销功能开发中...", "提示", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+
         private void SaveToClipboard()
         {
             var rect = _selectionGeometry.Rect;

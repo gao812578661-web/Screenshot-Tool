@@ -104,16 +104,43 @@
                         </Button>
                         <Button x:Name="BrushBtn" Width="34" Height="34" Margin="2,0" Click="OnToolClick" ToolTip="画笔" Tag="Brush">
                             <Viewbox Width="18" Height="18">
-                                <Path Data="M7,22 L11,22 L22,11 L18,7 L7,18 Z M16,9 L20,13" Stroke="#333333" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                <Path Data="M3,18 L7,18 L18,7 L14,3 L3,14 Z M12,5 L16,9" Stroke="#333333" StrokeThickness="1.5" StrokeLineJoin="Round"/>
                             </Viewbox>
                         </Button>
                         <Button x:Name="TextBtn" Width="34" Height="34" Margin="2,0" Click="OnToolClick" ToolTip="文字" Tag="Text">
-                            <Viewbox Width="16" Height="16">
-                                <TextBlock Text="A" FontSize="24" FontWeight="Bold" Foreground="#333333" FontFamily="Times New Roman"/>
+                            <Viewbox Width="18" Height="18">
+                                <Border Width="24" Height="24" BorderBrush="#333333" BorderThickness="2" CornerRadius="1">
+                                    <TextBlock Text="T" FontSize="18" FontWeight="Bold" Foreground="#333333" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </Viewbox>
+                        </Button>
+                        <Button x:Name="MosaicBtn" Width="34" Height="34" Margin="2,0" Click="OnToolClick" ToolTip="马赛克" Tag="Mosaic">
+                            <Viewbox Width="18" Height="18">
+                                <Border Width="24" Height="24" BorderBrush="#333333" BorderThickness="2" CornerRadius="1">
+                                    <Canvas Width="20" Height="20">
+                                        <!-- 4x4 网格图案 -->
+                                        <Rectangle Width="4" Height="4" Canvas.Left="2" Canvas.Top="2" Fill="#333333"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="6" Canvas.Top="2" Fill="Transparent" Stroke="#333333" StrokeThickness="0.5"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="10" Canvas.Top="2" Fill="#333333"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="14" Canvas.Top="2" Fill="Transparent" Stroke="#333333" StrokeThickness="0.5"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="2" Canvas.Top="6" Fill="Transparent" Stroke="#333333" StrokeThickness="0.5"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="6" Canvas.Top="6" Fill="#333333"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="10" Canvas.Top="6" Fill="Transparent" Stroke="#333333" StrokeThickness="0.5"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="14" Canvas.Top="6" Fill="#333333"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="2" Canvas.Top="10" Fill="#333333"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="6" Canvas.Top="10" Fill="Transparent" Stroke="#333333" StrokeThickness="0.5"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="10" Canvas.Top="10" Fill="#333333"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="14" Canvas.Top="10" Fill="Transparent" Stroke="#333333" StrokeThickness="0.5"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="2" Canvas.Top="14" Fill="Transparent" Stroke="#333333" StrokeThickness="0.5"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="6" Canvas.Top="14" Fill="#333333"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="10" Canvas.Top="14" Fill="Transparent" Stroke="#333333" StrokeThickness="0.5"/>
+                                        <Rectangle Width="4" Height="4" Canvas.Left="14" Canvas.Top="14" Fill="#333333"/>
+                                    </Canvas>
+                                </Border>
                             </Viewbox>
                         </Button>
                         <Button x:Name="TranslateBtn" Width="34" Height="34" Margin="2,0" Click="OnTranslateClick" ToolTip="翻译">
-                            <Viewbox Width="20" Height="20">
+                            <Viewbox Width="22" Height="22">
                                 <Canvas Width="24" Height="24">
                                     <!-- Back Square with '文' -->
                                     <Path Stroke="#333333" StrokeThickness="1.5" Data="M8,8 H20 V20 H8 Z"/>
@@ -124,22 +151,53 @@
                                 </Canvas>
                             </Viewbox>
                         </Button>
+                        <Button x:Name="OcrBtn" Width="34" Height="34" Margin="2,0" Click="OnOcrClick" ToolTip="文字识别">
+                            <Viewbox Width="20" Height="20">
+                                <Canvas Width="24" Height="24">
+                                    <Ellipse Width="16" Height="16" Canvas.Left="2" Canvas.Top="2" Stroke="#333333" StrokeThickness="2.5" Fill="Transparent"/>
+                                    <Path Data="M15,15 L21,21" Stroke="#333333" StrokeThickness="3"/>
+                                    <TextBlock Text="A" FontSize="11" FontWeight="Bold" Foreground="#333333" Canvas.Left="6" Canvas.Top="4"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
+                        <Rectangle Width="1" Height="18" Fill="#EEEEEE" Margin="6,0" VerticalAlignment="Center"/>
+                        <!-- 长截图 -->
+                        <Button x:Name="LongScreenshotBtn" Width="34" Height="34" Margin="2,0" Click="OnLongScreenshotClick" ToolTip="长截图">
+                            <Viewbox Width="20" Height="20">
+                                <Canvas Width="24" Height="24">
+                                    <Rectangle Width="14" Height="20" Canvas.Left="5" Canvas.Top="2" Stroke="#333333" StrokeThickness="1.5" Fill="Transparent"/>
+                                    <Path Data="M12,6 L12,10 M9,8 L12,5 L15,8" Stroke="#333333" StrokeThickness="1.5" Fill="Transparent"/>
+                                    <Path Data="M12,14 L12,18 M9,16 L12,19 L15,16" Stroke="#333333" StrokeThickness="1.5" Fill="Transparent"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
+                        <!-- 撤销 -->
+                        <Button x:Name="UndoBtn" Width="34" Height="34" Margin="2,0" Click="OnUndoClick" ToolTip="撤销">
+                            <Viewbox Width="18" Height="18">
+                                <Canvas Width="24" Height="24">
+                                    <!-- 粗圆弧 从12点顺时针到9点，缺口在9-12点 -->
+                                    <Path Data="M12,4 A8,8 0 1,1 4,12" Stroke="#333333" StrokeThickness="3" Fill="Transparent"/>
+                                    <!-- 三角箭头，底边中点Y=4与圆弧起始端对齐，尖角指向9点钟方向 -->
+                                    <Path Data="M12,1 L7,4 L12,7 Z" Fill="#333333"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
                         <Rectangle Width="1" Height="18" Fill="#EEEEEE" Margin="6,0" VerticalAlignment="Center"/>
                         <!-- Actions -->
                         <Button Width="34" Height="34" Margin="2,0" Click="OnSaveClick" ToolTip="保存">
                             <Viewbox Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Path Data="M6,20 L6,26 L26,26 L26,20 M16,8 L16,23 M11,18 L16,23 L21,18" Stroke="#333333" StrokeThickness="2" StrokeLineJoin="Round" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
+                                <Path Data="M6,18 L6,24 L26,24 L26,18 M16,6 L16,21 M11,16 L16,21 L21,16" Stroke="#333333" StrokeThickness="2" StrokeLineJoin="Round" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
                             </Viewbox>
                         </Button>
                         <Rectangle Width="1" Height="18" Fill="#EEEEEE" Margin="6,0" VerticalAlignment="Center"/>
                         <Button Width="34" Height="34" Margin="2,0" Click="OnCancelClick" ToolTip="取消">
                             <Viewbox Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Path Data="M8,8 L24,24 M24,8 L8,24" Stroke="#FF4444" StrokeThickness="3" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
+                                <Path Data="M6,6 L22,22 M22,6 L6,22" Stroke="#FF4444" StrokeThickness="3" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
                             </Viewbox>
                         </Button>
                         <Button Width="34" Height="34" Margin="2,0" Click="OnConfirmClick" ToolTip="完成">
                             <Viewbox Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Path Data="M9,18 L15,24 L26,10" Stroke="#07C160" StrokeThickness="3" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
+                                <Path Data="M7,14 L13,20 L24,6" Stroke="#07C160" StrokeThickness="3" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
                             </Viewbox>
                         </Button>
                     </StackPanel>
