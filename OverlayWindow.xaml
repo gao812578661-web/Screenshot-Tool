@@ -40,6 +40,12 @@
         <!-- Mask Layer (Darken outside selection) -->
         <Path x:Name="MaskPath" Fill="#80000000" Stretch="None" IsHitTestVisible="False"/>
 
+        <!-- Underlay for Positioning (Between Mask and Annotation) -->
+        <Canvas x:Name="UnderlayCanvas" IsHitTestVisible="False">
+            <!-- Translation Result Overlay (Container for line-by-line mapping) -->
+            <Canvas x:Name="TranslationResultOverlay" Visibility="Collapsed" IsHitTestVisible="False"/>
+        </Canvas>
+
         <!-- Annotation Drawing Layer -->
         <Canvas x:Name="AnnotationCanvas" IsHitTestVisible="True" Background="#01000000"/>
 
@@ -50,9 +56,6 @@
 
         <!-- UI Overlay Layer (Toolbar, Labels) -->
         <Canvas x:Name="UIOverlayCanvas">
-            <!-- Translation Result Overlay (Container for line-by-line mapping) -->
-            <Canvas x:Name="TranslationResultOverlay" Visibility="Collapsed" IsHitTestVisible="False"/>
-
             <!-- Resolution Label -->
             <Border x:Name="SizeLabel" Background="#333333" CornerRadius="2" Padding="4,2" Visibility="Collapsed" Canvas.Left="0" Canvas.Top="0">
                 <TextBlock x:Name="SizeText" Text="0 x 0" Foreground="White" FontSize="12"/>
@@ -61,7 +64,7 @@
             <!-- Toolbar -->
             <StackPanel x:Name="ToolbarArea" Canvas.Left="0" Canvas.Top="0" Visibility="Collapsed">
                 <!-- Main Tools -->
-                <Border x:Name="ToolbarPanel" IsHitTestVisible="True" Background="White" BorderBrush="#EEEEEE" BorderThickness="1" CornerRadius="4" Effect="{StaticResource DropShadowEffect}">
+                <Border x:Name="ToolbarPanel" IsHitTestVisible="True" Background="White" BorderBrush="#EEEEEE" BorderThickness="1" CornerRadius="12" Effect="{StaticResource DropShadowEffect}">
                     <Border.Resources>
                         <Style TargetType="Button">
                             <Setter Property="Background" Value="Transparent"/>
@@ -161,16 +164,6 @@
                             </Viewbox>
                         </Button>
                         <Rectangle Width="1" Height="18" Fill="#EEEEEE" Margin="6,0" VerticalAlignment="Center"/>
-                        <!-- 长截图 -->
-                        <Button x:Name="LongScreenshotBtn" Width="34" Height="34" Margin="2,0" Click="OnLongScreenshotClick" ToolTip="长截图">
-                            <Viewbox Width="20" Height="20">
-                                <Canvas Width="24" Height="24">
-                                    <Rectangle Width="14" Height="20" Canvas.Left="5" Canvas.Top="2" Stroke="#333333" StrokeThickness="1.5" Fill="Transparent"/>
-                                    <Path Data="M12,6 L12,10 M9,8 L12,5 L15,8" Stroke="#333333" StrokeThickness="1.5" Fill="Transparent"/>
-                                    <Path Data="M12,14 L12,18 M9,16 L12,19 L15,16" Stroke="#333333" StrokeThickness="1.5" Fill="Transparent"/>
-                                </Canvas>
-                            </Viewbox>
-                        </Button>
                         <!-- 撤销 -->
                         <Button x:Name="UndoBtn" Width="34" Height="34" Margin="2,0" Click="OnUndoClick" ToolTip="撤销" IsEnabled="False">
                             <Button.Resources>

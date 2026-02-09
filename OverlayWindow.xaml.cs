@@ -586,17 +586,19 @@ namespace RefScrn
                         Background = System.Windows.Media.Brushes.White
                     });
                     TranslationResultOverlay.Visibility = Visibility.Visible;
-                    ToolbarArea.Visibility = Visibility.Visible;
                 }
             }
             catch (Exception ex)
             {
-                ToolbarArea.Visibility = Visibility.Visible;
-                if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
                 // Simple error display
                 TranslationResultOverlay.Children.Clear();
                 TranslationResultOverlay.Children.Add(new TextBlock { Text = $"异常: {ex.Message}", Foreground = System.Windows.Media.Brushes.Red });
                 TranslationResultOverlay.Visibility = Visibility.Visible;
+            }
+            finally
+            {
+                ToolbarArea.Visibility = Visibility.Visible;
+                if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
             }
         }
 
@@ -780,6 +782,12 @@ namespace RefScrn
                 if (left < 0) left = 0;
                 double top = rect.Bottom + 5;
                 if (top + height > this.ActualHeight) top = rect.Top - height - 5;
+                
+                // Ensure toolbar doesn't go off-screen
+                if (left < 0) left = 5;
+                if (left + width > this.ActualWidth) left = this.ActualWidth - width - 5;
+                if (top < 0) top = 5;
+
                 System.Windows.Controls.Canvas.SetLeft(ToolbarArea, left);
                 System.Windows.Controls.Canvas.SetTop(ToolbarArea, top);
             }
@@ -845,13 +853,6 @@ namespace RefScrn
         private async void OnOcrClick(object sender, RoutedEventArgs e)
         {
             if (_ocrService == null) _ocrService = new Services.OcrService();
-
-            // Toggle visibility if already visible
-            if (TranslationResultOverlay.Visibility == Visibility.Visible)
-            {
-                TranslationResultOverlay.Visibility = Visibility.Collapsed;
-                return;
-            }
 
             var rect = _selectionGeometry.Rect;
             if (rect.Width <= 0 || rect.Height <= 0) return;
@@ -931,12 +932,6 @@ namespace RefScrn
             {
                 ToolbarArea.Visibility = Visibility.Visible; // Always restore toolbar
             }
-        }
-
-        private void OnLongScreenshotClick(object sender, RoutedEventArgs e)
-        {
-            // TODO: 实现长截图功能
-            System.Windows.MessageBox.Show("长截图功能开发中...", "提示", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
 
         private void OnUndoClick(object sender, RoutedEventArgs e)
