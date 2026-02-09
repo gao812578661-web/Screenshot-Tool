@@ -31,21 +31,25 @@ namespace RefScrn
         private Services.TranslationService _translationService;
 
         private Services.AppSettings _settings;
+        private BitmapSource _originalScreenshot;
+        private double _scaleX = 1.0;
+        private double _scaleY = 1.0;
 
         public OverlayWindow(BitmapSource screenshot, double x, double y, Services.AppSettings settings = null)
         {
             InitializeComponent();
+            _originalScreenshot = screenshot;
             BackgroundImage.Source = screenshot;
             _settings = settings;
 
             // Calculate DPI Scale for the target monitor
-            GetDpiScale(x, y, out double scaleX, out double scaleY);
+            GetDpiScale(x, y, out _scaleX, out _scaleY);
 
             // Convert Pixels (from Screenshot/Screen.Bounds) to WPF DIUs
-            this.Width = screenshot.PixelWidth / scaleX;
-            this.Height = screenshot.PixelHeight / scaleY;
-            this.Left = x / scaleX;
-            this.Top = y / scaleY;
+            this.Width = screenshot.PixelWidth / _scaleX;
+            this.Height = screenshot.PixelHeight / _scaleY;
+            this.Left = x / _scaleX;
+            this.Top = y / _scaleY;
 
             _selectionGeometry = new System.Windows.Media.RectangleGeometry(new System.Windows.Rect(0, 0, 0, 0));
             _maskGeometry = new System.Windows.Media.CombinedGeometry(
@@ -349,38 +353,112 @@ namespace RefScrn
         private async void OnTranslateClick(object sender, RoutedEventArgs e)
         {
             if (_translationService == null) _translationService = new Services.TranslationService();
-            
+
+            // Toggle visibility if already visible
+            if (TranslationResultOverlay.Visibility == Visibility.Visible)
+            {
+                TranslationResultOverlay.Visibility = Visibility.Collapsed;
+                return;
+            }
+
             var rect = _selectionGeometry.Rect;
             if (rect.Width <= 0 || rect.Height <= 0) return;
 
             try
             {
-                // Show loading state
+                // 1. Position and show loading state
+                Canvas.SetLeft(TranslationResultOverlay, rect.X);
+                Canvas.SetTop(TranslationResultOverlay, rect.Y);
+                TranslationResultOverlay.Width = rect.Width;
+                TranslationResultOverlay.Height = rect.Height;
+                TranslationResultOverlay.Children.Clear();
+                TranslationResultOverlay.Children.Add(new TextBlock 
+                { 
+                    Text = "正在识别并翻译...", 
+                    Foreground = System.Windows.Media.Brushes.White,
+                    Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(180, 0, 0, 0)),
+                    Padding = new System.Windows.Thickness(5),
+                    FontSize = 14
+                });
                 TranslationResultOverlay.Visibility = Visibility.Visible;
-                OriginalTextBlock.Text = "正在识别并翻译...";
-                TranslatedTextBlock.Text = "...";
 
-                // Capture selection area
-                var rtb = new RenderTargetBitmap((int)this.ActualWidth, (int)this.ActualHeight, 96, 96, PixelFormats.Pbgra32);
-                rtb.Render(this); // Just capture background + annotations
-                var crop = new CroppedBitmap(rtb, new Int32Rect((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height));
+                // 2. Hide specific UI for clean capture
+                ToolbarArea.Visibility = Visibility.Collapsed;
+                if (MaskPath != null) MaskPath.Visibility = Visibility.Collapsed;
+                this.UpdateLayout();
 
-                // Call service
+                // 3. Capture high-res crop
+                var crop = GetCroppedCapture(rect, hideSelectionUI: false);
+                if (crop == null)
+                {
+                    ToolbarArea.Visibility = Visibility.Visible;
+                    if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
+                    return;
+                }
+
+                // 4. Restore mask immediately
+                if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
+
+                // 5. Call service
                 var result = await _translationService.AnalyzeAndTranslateAsync(crop);
                 
                 if (result.Success)
                 {
-                    OriginalTextBlock.Text = result.OriginalText;
-                    TranslatedTextBlock.Text = result.TranslatedText;
+                    TranslationResultOverlay.Children.Clear();
+                    TranslationResultOverlay.Visibility = Visibility.Visible;
+
+                    foreach (var line in result.Lines)
+                    {
+                        if (string.IsNullOrEmpty(line.Text)) continue;
+
+                        // Calculate font size based on line height (heuristic for WeChat style)
+                        double fontSize = Math.Max(10, line.BoundingRect.Height * 0.75);
+
+                        var lineBorder = new Border
+                        {
+                            Background = HexToBrush(line.BackgroundColor),
+                            Width = line.BoundingRect.Width + 4,
+                            Height = line.BoundingRect.Height,
+                            Child = new TextBlock
+                            {
+                                Text = line.Text,
+                                Foreground = HexToBrush(line.TextColor),
+                                FontSize = fontSize,
+                                FontFamily = new System.Windows.Media.FontFamily("Microsoft YaHei"),
+                                VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                                HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+                                TextWrapping = System.Windows.TextWrapping.NoWrap
+                            }
+                        };
+
+                        Canvas.SetLeft(lineBorder, line.BoundingRect.X);
+                        Canvas.SetTop(lineBorder, line.BoundingRect.Y);
+                    TranslationResultOverlay.Children.Add(lineBorder);
+                    }
                 }
                 else
                 {
-                    TranslatedTextBlock.Text = $"错误: {result.ErrorMessage}";
+                    // Error fallback
+                    TranslationResultOverlay.Children.Clear();
+                    TranslationResultOverlay.Children.Add(new TextBlock 
+                    { 
+                        Text = $"错误: {result.ErrorMessage}", 
+                        Foreground = System.Windows.Media.Brushes.Red,
+                        FontSize = 14,
+                        Background = System.Windows.Media.Brushes.White
+                    });
+                    TranslationResultOverlay.Visibility = Visibility.Visible;
+                    ToolbarArea.Visibility = Visibility.Visible;
                 }
             }
             catch (Exception ex)
             {
-                TranslatedTextBlock.Text = $"异常: {ex.Message}";
+                ToolbarArea.Visibility = Visibility.Visible;
+                if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
+                // Simple error display
+                TranslationResultOverlay.Children.Clear();
+                TranslationResultOverlay.Children.Add(new TextBlock { Text = $"异常: {ex.Message}", Foreground = System.Windows.Media.Brushes.Red });
+                TranslationResultOverlay.Visibility = Visibility.Visible;
             }
         }
 
@@ -415,6 +493,84 @@ namespace RefScrn
                 new System.Windows.Point(Math.Min(left, right), Math.Min(top, bottom)),
                 new System.Windows.Point(Math.Max(left, right), Math.Max(top, bottom)));
             UpdateSelection(rect);
+        }
+
+        private BitmapSource GetCroppedCapture(System.Windows.Rect rect, bool hideSelectionUI = true)
+        {
+            if (rect.Width <= 0 || rect.Height <= 0) return null;
+
+            try
+            {
+                // If there are annotations, we MUST use RenderTargetBitmap to merge them
+                if (AnnotationCanvas.Children.Count > 0 || !hideSelectionUI)
+                {
+                    // Hide UI helpers based on requested flags
+                    if (hideSelectionUI)
+                    {
+                        SelectionRect.Visibility = Visibility.Collapsed;
+                        SizeLabel.Visibility = Visibility.Collapsed;
+                    }
+                    
+                    // Always hide translation and toolbar for clean capture
+                    var oldTranslationVisibility = TranslationResultOverlay.Visibility;
+                    TranslationResultOverlay.Visibility = Visibility.Collapsed;
+                    ToolbarArea.Visibility = Visibility.Collapsed;
+                    if (MaskPath != null) MaskPath.Visibility = Visibility.Collapsed;
+                    this.UpdateLayout();
+
+                    // Render at high resolution (scaled up by DPI)
+                    int pixelWidth = (int)Math.Round(this.ActualWidth * _scaleX);
+                    int pixelHeight = (int)Math.Round(this.ActualHeight * _scaleY);
+                    
+                    var rtb = new RenderTargetBitmap(pixelWidth, pixelHeight, 96 * _scaleX, 96 * _scaleY, PixelFormats.Pbgra32);
+                    rtb.Render(this);
+
+                    // Restore UI helpers
+                    if (hideSelectionUI)
+                    {
+                        SelectionRect.Visibility = Visibility.Visible;
+                        SizeLabel.Visibility = Visibility.Visible;
+                    }
+                    TranslationResultOverlay.Visibility = oldTranslationVisibility;
+                    ToolbarArea.Visibility = Visibility.Visible;
+                    if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
+
+                    // Crop using the high-res pixels
+                    var pixelRect = new Int32Rect(
+                        (int)Math.Round(rect.X * _scaleX),
+                        (int)Math.Round(rect.Y * _scaleY),
+                        (int)Math.Round(rect.Width * _scaleX),
+                        (int)Math.Round(rect.Height * _scaleY));
+
+                    return new CroppedBitmap(rtb, pixelRect);
+                }
+                else
+                {
+                    // Clean capture: direct crop from the original raw screenshot (maximum quality)
+                    var pixelRect = new Int32Rect(
+                        (int)Math.Round(rect.X * _scaleX),
+                        (int)Math.Round(rect.Y * _scaleY),
+                        (int)Math.Round(rect.Width * _scaleX),
+                        (int)Math.Round(rect.Height * _scaleY));
+
+                    // Ensure coordinates are within source bounds
+                    pixelRect.X = Math.Max(0, Math.Min(pixelRect.X, _originalScreenshot.PixelWidth - 1));
+                    pixelRect.Y = Math.Max(0, Math.Min(pixelRect.Y, _originalScreenshot.PixelHeight - 1));
+                    pixelRect.Width = Math.Max(1, Math.Min(pixelRect.Width, _originalScreenshot.PixelWidth - pixelRect.X));
+                    pixelRect.Height = Math.Max(1, Math.Min(pixelRect.Height, _originalScreenshot.PixelHeight - pixelRect.Y));
+
+                    return new CroppedBitmap(_originalScreenshot, pixelRect);
+                }
+            }
+            catch
+            {
+                // Fallback UI restore
+                SelectionRect.Visibility = Visibility.Visible;
+                SizeLabel.Visibility = Visibility.Visible;
+                ToolbarArea.Visibility = Visibility.Visible;
+                if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
+                throw;
+            }
         }
 
         private int GetHandleIndex(System.Windows.Point pos)
@@ -481,24 +637,9 @@ namespace RefScrn
                 var rect = _selectionGeometry.Rect;
                 if (rect.Width <= 0 || rect.Height <= 0) return;
 
-                // Hide UI elements before capture
-                SelectionRect.Visibility = Visibility.Collapsed;
-                SizeLabel.Visibility = Visibility.Collapsed;
-                ToolbarArea.Visibility = Visibility.Collapsed;
-                if (MaskPath != null) MaskPath.Visibility = Visibility.Collapsed; // Hide mask too just in case
-                this.UpdateLayout();
-
-                // 1. Capture the image
-                var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(
-                    (int)this.ActualWidth, (int)this.ActualHeight, 96, 96, PixelFormats.Pbgra32);
-                rtb.Render(this);
-                var crop = new System.Windows.Media.Imaging.CroppedBitmap(rtb, new System.Windows.Int32Rect((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height));
-
-                // Restore UI elements
-                SelectionRect.Visibility = Visibility.Visible;
-                SizeLabel.Visibility = Visibility.Visible;
-                ToolbarArea.Visibility = Visibility.Visible;
-                if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
+                // 1. Capture high-res crop
+                var crop = GetCroppedCapture(rect);
+                if (crop == null) return;
 
                 // 2. Open Save File Dialog
                 var dlg = new Microsoft.Win32.SaveFileDialog
@@ -537,12 +678,6 @@ namespace RefScrn
             }
             catch (Exception ex)
             {
-                // Ensure UI is restored even on error
-                SelectionRect.Visibility = Visibility.Visible;
-                SizeLabel.Visibility = Visibility.Visible;
-                ToolbarArea.Visibility = Visibility.Visible;
-                if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
-
                 System.Windows.MessageBox.Show($"保存失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -555,26 +690,11 @@ namespace RefScrn
             var rect = _selectionGeometry.Rect;
             if (rect.Width <= 0 || rect.Height <= 0) return;
 
-            // Hide UI elements before capture
-            SelectionRect.Visibility = Visibility.Collapsed;
-            SizeLabel.Visibility = Visibility.Collapsed;
-            ToolbarArea.Visibility = Visibility.Collapsed;
-            if (MaskPath != null) MaskPath.Visibility = Visibility.Collapsed;
-            this.UpdateLayout();
-
-            // Use ActualWidth/Height to capture full window including annotations
-            System.Windows.Media.Imaging.RenderTargetBitmap rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(
-                (int)this.ActualWidth, (int)this.ActualHeight, 96, 96, PixelFormats.Pbgra32);
-            rtb.Render(this);
-
-            var crop = new System.Windows.Media.Imaging.CroppedBitmap(rtb, new System.Windows.Int32Rect((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height));
-            System.Windows.Clipboard.SetImage(crop);
-
-             // Restore (though window closes immediately after, good practice)
-            SelectionRect.Visibility = Visibility.Visible;
-            SizeLabel.Visibility = Visibility.Visible;
-            ToolbarArea.Visibility = Visibility.Visible;
-            if (MaskPath != null) MaskPath.Visibility = Visibility.Visible;
+            var crop = GetCroppedCapture(rect);
+            if (crop != null)
+            {
+                System.Windows.Clipboard.SetImage(crop);
+            }
         }
         private void GetDpiScale(double x, double y, out double scaleX, out double scaleY)
         {
@@ -600,6 +720,18 @@ namespace RefScrn
             {
                 // Fallback to system DPI or 1.0 if fails
                 // Console.WriteLine($"DPI check failed: {ex.Message}");
+            }
+        }
+
+        private System.Windows.Media.Brush HexToBrush(string hex)
+        {
+            try
+            {
+                return new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex));
+            }
+            catch
+            {
+                return System.Windows.Media.Brushes.White;
             }
         }
     }
